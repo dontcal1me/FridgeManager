@@ -1,4 +1,4 @@
-# CP2026-1Team
+# FridgeManager
 
 # 냉장고 식재료 관리 프로그램 (Fridge Manager)
 
