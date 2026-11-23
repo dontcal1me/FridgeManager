@@ -8,3 +8,6 @@ Release/
 *.pdb
 *.ilk
 *.exe
+# OpenAPI 인증키는 절대 올리지 않는다
+data/api_key.txt
+data/steps.tmp

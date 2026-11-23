@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{fee8f27a-4b5a-44b9-870b-28ee37abed30}</ProjectGuid>
-    <RootNamespace>FridgeConsole</RootNamespace>
+    <ProjectGuid>{b3f1c9d2-7a64-4e0b-9c35-2d8e41f6a7b9}</ProjectGuid>
+    <RootNamespace>FridgeGUI</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -78,12 +78,12 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Manifest>
@@ -96,12 +96,12 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Manifest>
@@ -112,12 +112,12 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Manifest>
@@ -130,12 +130,12 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Manifest>
@@ -143,34 +143,40 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\common.h" />
-    <ClInclude Include="..\src\expiry.h" />
-    <ClInclude Include="..\src\fileio.h" />
-    <ClInclude Include="..\src\food.h" />
-    <ClInclude Include="..\src\recipe.h" />
-    <ClInclude Include="..\src\stats.h" />
-    <ClInclude Include="..\src\test.h" />
-    <ClInclude Include="..\src\ui_console.h" />
-    <ClInclude Include="..\src\util.h" />
+    <ClInclude Include="..\include\apirec.h" />
+    <ClInclude Include="..\include\common.h" />
+    <ClInclude Include="..\include\expiry.h" />
+    <ClInclude Include="..\include\fileio.h" />
+    <ClInclude Include="..\include\food.h" />
+    <ClInclude Include="..\include\guide.h" />
+    <ClInclude Include="..\include\guide_api.h" />
+    <ClInclude Include="..\include\recipe.h" />
+    <ClInclude Include="..\include\stats.h" />
+    <ClInclude Include="..\include\dlg_food.h" />
+    <ClInclude Include="..\include\dlg_recipe.h" />
+    <ClInclude Include="..\include\dlg_recommend.h" />
+    <ClInclude Include="..\include\dlg_simple.h" />
+    <ClInclude Include="..\include\gui_common.h" />
+    <ClInclude Include="..\include\gui_dialog.h" />
+    <ClInclude Include="..\include\ui_gui.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\apirec.c" />
+    <ClCompile Include="..\src\dlg_food.c" />
+    <ClCompile Include="..\src\dlg_recipe.c" />
+    <ClCompile Include="..\src\dlg_recommend.c" />
+    <ClCompile Include="..\src\dlg_simple.c" />
     <ClCompile Include="..\src\expiry.c" />
     <ClCompile Include="..\src\fileio.c" />
     <ClCompile Include="..\src\food.c" />
-    <ClCompile Include="..\src\main.c" />
+    <ClCompile Include="..\src\guide.c" />
+    <ClCompile Include="..\src\guide_api.c" />
+    <ClCompile Include="..\src\gui_common.c" />
+    <ClCompile Include="..\src\gui_dialog.c" />
+    <ClCompile Include="..\src\main_gui.c" />
     <ClCompile Include="..\src\recipe.c" />
     <ClCompile Include="..\src\stats.c" />
-    <ClCompile Include="..\src\test_expiry.c" />
-    <ClCompile Include="..\src\test_fileio.c" />
-    <ClCompile Include="..\src\test_food.c" />
-    <ClCompile Include="..\src\test_recipe.c" />
-    <ClCompile Include="..\src\test_stats.c" />
-    <ClCompile Include="..\src\test_util.c" />
-    <ClCompile Include="..\src\ui_console.c" />
-    <ClCompile Include="..\src\util.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\README.md" />
+    <ClCompile Include="..\src\ui_gui.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

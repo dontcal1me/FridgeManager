@@ -1,7 +1,7 @@
 # 냉장고 식재료 관리 프로그램 (Fridge Manager)
 
 > 냉장고 속 식재료의 유통기한을 관리하고, 먼저 먹어야 할 재료를 알려 주며, 남은 재료로 만들 수 있는 요리를 추천하는 C언어 프로그램
-> **콘솔 버전(필수)**을 먼저 완성하고, 같은 로직을 재사용해 **GUI 버전(도전)**으로 확장합니다.
+> **GUI 버전(필수)**으로 완성하고, **도전 목표**로 식품안전나라 API에서 **조리 방법을 자동으로 불러옵니다.**
 
 - 과목: 비판적사고 (홍서빈 교수님)
 - 팀명: TEAM 1 (윤종하, 장태현, 김기범, 최민솔, 박지연)
@@ -10,23 +10,20 @@
 - GUI: Win32 API (Windows 기본 제공, 추가 라이브러리 설치 없음)
 - 저장소: https://github.com/dontcal1me/FridgeManager
 
+> **방향 변경 (2026-11-23):** 콘솔 버전을 제거하고 **GUI 버전을 기본(필수) 버전**으로 정했습니다. 도전 목표는 **API로 조리 방법을 자동으로 불러오는 기능**입니다.
+> 역할은 **GUI 버전 기준으로 다시 나눴습니다** (2.1장, 6장). 장태현은 가장 작고 쉬운 `dlg_simple` 한 쌍을 맡습니다. 15.1장은 콘솔 시절 화면 예시로, 설계 당시 참고용입니다.
+> 제거한 콘솔 파일은 `FridgeManager_콘솔버전_백업` 폴더에 보관했습니다.
+
 이 문서는 팀원들이 **각자 맡은 파일을 따로 개발하고, 나중에 문제없이 합칠 수 있도록** 정리한 작업 안내서입니다.
 작업을 시작하기 전에 2장부터 5장까지는 꼭 읽고, 6장에서 **내 이름이 붙은 절**을 찾아 그대로 따라 하세요.
 
 | 나는 | 내 담당 | 먼저 볼 곳 | 가장 먼저 할 일 |
 |---|---|---|---|
-| 윤종하 (팀장) | `common.h`, `main.c`, `ui_console`, `fileio` | [6.1](#61-윤종하-팀장) | 11/23까지 뼈대 코드 업로드 |
-| 장태현 | `util` + 최종 발표 | [6.2](#62-장태현-util) | 11/29까지 `util.c` PR |
-| 김기범 | `expiry` + 흐름도 | [6.3](#63-김기범-expiry) | 11/25까지 `getToday`, `isValidDate`, `daysLeft` PR |
-| 최민솔 (부팀장) | `recipe`, `recipes.txt` | [6.4](#64-최민솔-recipe) | 11/25까지 `initRecipeBook`, `addRecipe`, `freeRecipeBook` PR |
+| 윤종하 (팀장) | `common.h`, `fileio`, `guide`, `guide_api`, `apirec`, GUI 공통·메인 창(`main_gui`, `ui_gui`, `gui_common`, `gui_dialog`), `dlg_recommend` | [6.1](#61-윤종하-팀장) | 11/23까지 뼈대 코드 업로드 |
+| 장태현 | `dlg_simple` (가장 작은 파일 1쌍) + 최종 발표 | [6.2](#62-장태현-dlg_simple) | 11/29까지 `dlg_simple` PR |
+| 김기범 | `expiry`, `dlg_food` + 흐름도 | [6.3](#63-김기범-expiry-dlg_food) | 11/25까지 `getToday`, `isValidDate`, `daysLeft` PR |
+| 최민솔 (부팀장) | `recipe`, `dlg_recipe`, `recipes.txt` | [6.4](#64-최민솔-recipe-dlg_recipe) | 11/25까지 `initRecipeBook`, `addRecipe`, `freeRecipeBook` PR |
 | 박지연 | `food`, `stats` + 테스트 | [6.5](#65-박지연-food-stats) | 11/25까지 `initFridge`, `addFood`, `freeFridge`와 `initWasteList`, `appendWaste`, `addWaste`, `freeWasteList` PR |
-
----|---|---|
-| 윤종하 (팀장) | [6.1](#61-윤종하-팀장) | 11/23까지 뼈대 코드 업로드 |
-| 장태현 | [6.2](#62-장태현-food-util) | 11/25까지 `initFridge`, `addFood`, `freeFridge` PR |
-| 김기범 | [6.3](#63-김기범-expiry) | 11/25까지 `getToday`, `isValidDate`, `daysLeft` PR |
-| 최민솔 (부팀장) | [6.4](#64-최민솔-recipe) | 11/25까지 `initRecipeBook`, `addRecipe`, `freeRecipeBook` PR |
-| 박지연 | [6.5](#65-박지연-stats-fileio) | 11/25까지 `initWasteList`, `appendWaste`, `addWaste`, `freeWasteList` PR |
 
 ---
 
@@ -66,23 +63,25 @@
 
 ### 2.1 역할 분담
 
-모두가 **자기 담당 파일을 직접 코딩하고, 커밋·푸시하고, Pull Request를 올립니다.** 파일 양은 사람마다 다르게 나눴습니다. 발표를 맡은 장태현은 가장 작은 모듈 1개를 맡습니다.
+모두가 **자기 담당 파일을 직접 개발·확인하고, 커밋·푸시하고, Pull Request를 올립니다.** 이 프로그램은 **GUI 버전 하나**이며, 파일 양은 사람마다 다르게 나눴습니다. 발표를 맡은 장태현은 **가장 작고 쉬운 파일 1쌍(`dlg_simple`)만** 맡습니다.
 
-| 이름 | 역할 | 담당 파일 | 개발 외 업무 | 브랜치 |
+| 이름 | 역할 | 담당 파일 (`include/`의 `.h`와 `src/`의 `.c` 쌍) | 개발 외 업무 | 브랜치 |
 |---|---|---|---|---|
-| 윤종하 | 팀장 · 통합 · 일정 · 문서 | `common.h`, `main.c`, `ui_console.c/h` (모든 화면), `fileio.c/h` | GitHub 관리·병합, 회의록·WBS, 제안·결과보고서, README, 발표 PPT | `feature/skeleton`, `feature/main`, `feature/fileio` |
-| 장태현 | 구현(작은 모듈) · 발표 | `util.c/h` | **최종 발표·데모 시연**, 예상 질문과 답변 정리 | `feature/util` |
-| 김기범 | 구현 | `expiry.c/h` (F2, F4) | 프로그램 흐름도 | `feature/expiry` |
-| 최민솔 | 부팀장 · 구현 | `recipe.c/h` (F3, 자동 차감), `data/recipes.txt` (20개 이상) | PR 검토 대행, 데모용 샘플 데이터 준비 | `feature/recipe` |
-| 박지연 | 구현 · 테스트 | `food.c/h` (F1, F5), `stats.c/h` (F6) | 테스트 시나리오·결과서 | `feature/food`, `feature/stats` |
+| 윤종하 | 팀장 · 통합 · 일정 · 문서 | `common.h`, `fileio`, `guide`, `guide_api`(도전), `apirec`(도전), `main_gui.c`, `ui_gui`(메인 창), `gui_common`, `gui_dialog`, `dlg_recommend`(요리 추천 창 + API 추천·조리법 자동 불러오기) | GitHub 관리·병합, 회의록·WBS, 제안·결과보고서, README, 발표 PPT | `feature/skeleton`, `feature/gui`, `feature/fileio`, `feature/guide` |
+| 장태현 | 구현(가장 작은 파일) · 발표 | `dlg_simple` (수량 입력 창, 글 보기 창) | **최종 발표·데모 시연**, 예상 질문과 답변 정리 | `feature/dlg-simple` |
+| 김기범 | 구현 | `expiry` (F2, F4), `dlg_food` (식재료 등록·수정 창) | 프로그램 흐름도 | `feature/expiry`, `feature/dlg-food` |
+| 최민솔 | 부팀장 · 구현 | `recipe` (F3, 자동 차감), `dlg_recipe` (레시피 추가 창), `data/recipes.txt` (20개 이상) | PR 검토 대행, 데모용 샘플 데이터 준비 | `feature/recipe`, `feature/dlg-recipe` |
+| 박지연 | 구현 · 테스트 | `food` (F1, F5), `stats` (F6) | 테스트 시나리오·결과서 | `feature/food`, `feature/stats` |
+
+담당 파일의 규모(대략): 장태현 약 90줄 / 김기범 약 190줄 / 박지연 약 200줄 / 최민솔 약 300줄. 나머지(공통 도우미, 메인 창, 파일 입출력, API 연동, 요리 추천 창)는 팀장이 맡아 통합합니다.
 
 **자기 담당 파일만 수정합니다.** 다른 사람 파일을 고쳐야 하면 먼저 단톡방에 말하고, 그 사람이 고치거나 허락을 받은 뒤 고칩니다.
 
 | 공유 파일 | 규칙 |
 |---|---|
 | `common.h`, 모든 `.h` 함수 선언 | 확정 후에는 **윤종하만** 수정. 바꾸고 싶으면 단톡방에 먼저 제안 |
-| `FridgeManager.slnx`, `FridgeConsole.vcxproj` | 윤종하만 수정. 파일 추가가 필요하면 요청 |
-| `main.c`, `ui_console.c` | 윤종하만 수정 |
+| `FridgeManager.slnx`, `FridgeGUI.vcxproj`, `FridgeGUI.vcxproj.filters` | 윤종하만 수정. 파일 추가가 필요하면 요청 |
+| `main_gui.c`, `ui_gui`, `gui_common`, `gui_dialog`, `dlg_recommend` | 윤종하만 수정 |
 
 ### 2.2 전체 일정 (WBS)
 
@@ -99,12 +98,12 @@
 | 주차 | 윤종하 | 장태현 | 김기범 | 최민솔 | 박지연 |
 |---|---|---|---|---|---|
 | **설계 주**<br>11/16~11/22 | 제안 발표(11/16), README·`common.h` 초안 공유, 회의록·WBS | 개발 환경 준비, 6.2 읽기 | 개발 환경 준비, 프로그램 흐름도 작성 | 개발 환경 준비, 기본 레시피 20개 목록 초안 | 개발 환경 준비, 6.5 읽기 |
-| **구현 1주차**<br>11/23~11/29 | **11/23(월) 뼈대 코드 업로드** (모든 `.h` 완성, `.c`는 빈 껍데기, 빌드 통과), `main.c`·메뉴 | **11/29(일)** `util.c` 전체 PR | **11/25(수)** `getToday`·`isValidDate`·`daysLeft` PR<br>**11/29(일)** `expiry.c` 전체 PR | **11/25(수)** `initRecipeBook`·`addRecipe`·`freeRecipeBook` PR, `recipes.txt` 작성 | **11/25(수)** `initFridge`·`addFood`·`freeFridge`, `initWasteList`·`appendWaste`·`addWaste`·`freeWasteList` PR<br>**11/29(일)** `food.c` 전체 PR |
-| **구현 2주차**<br>11/30~12/06 | PR 검토·병합, `fileio.c`와 모든 화면(`ui_console.c`) 작성, 연결 테스트 | 발표 시연 순서 정리 | 흐름도 최종 | **12/03(목)** `recommend`·`cookRecipe` PR, `recipes.txt` 20개 완성 | **12/03(목)** `stats.c` 전체 PR, 테스트 시나리오 작성<br>**12/06(일)** 전원 병합 완료, 콘솔 버전 실행 가능 |
+| **구현 1주차**<br>11/23~11/29 | **11/23(월) 뼈대 코드 업로드** (모든 `.h` 완성, `.c`는 빈 껍데기, 빈 메인 창이 뜨고 빌드 통과), `gui_common`·`gui_dialog` | **11/29(일)** `dlg_simple` PR | **11/25(수)** `getToday`·`isValidDate`·`daysLeft` PR<br>**11/29(일)** `expiry.c` 전체 PR | **11/25(수)** `initRecipeBook`·`addRecipe`·`freeRecipeBook` PR, `recipes.txt` 작성 | **11/25(수)** `initFridge`·`addFood`·`freeFridge`, `initWasteList`·`appendWaste`·`addWaste`·`freeWasteList` PR<br>**11/29(일)** `food.c` 전체 PR |
+| **구현 2주차**<br>11/30~12/06 | PR 검토·병합, `fileio`, 메인 창(`ui_gui`), `dlg_recommend`, `guide`·`guide_api`, 연결 확인 | 발표 시연 순서 정리 | **12/03(목)** `dlg_food` PR, 흐름도 최종 | **12/03(목)** `recommend`·`cookRecipe` PR, `dlg_recipe` PR, `recipes.txt` 20개 완성 | **12/03(목)** `stats.c` 전체 PR, 확인 시나리오 작성<br>**12/06(일)** 전원 병합 완료, GUI 실행 가능 |
 | **통합 주**<br>12/07~12/13 | 통합·디버깅, **12/13(일) v1.0 태그** | 시연 리허설, 예상 질문 정리 | 버그 수정, 자기 코드 설명 연습 | 버그 수정, 데모 샘플 데이터 | 통합 테스트 실행, 버그를 Issues에 등록, 테스트 결과서 |
-| **납품 주**<br>12/14~ | 결과보고서 취합, 발표 PPT | **최종 발표·데모 시연** | 보고서에 자기 모듈 설명 전달 | 보고서에 자기 모듈 설명 전달 | 테스트 결과서 최종, 보고서에 자기 모듈 설명 전달 |
+| **납품 주**<br>12/14~ | 결과보고서 취합, 발표 PPT, API 조리법 자동 불러오기 시연 준비 | **최종 발표·데모 시연** | 보고서에 자기 모듈 설명 전달 | 보고서에 자기 모듈 설명 전달 | 테스트 결과서 최종, 보고서에 자기 모듈 설명 전달 |
 
-GUI(도전)는 **v1.0이 완성된 뒤** 윤종하가 시간이 되면 진행합니다. 팀원이 맡을 일은 없습니다.
+팀원이 맡은 로직 모듈(`food`, `expiry`, `recipe`, `stats`)은 화면과 분리되어 있어서, 화면 파일이 바뀌어도 **그대로** 쓰입니다.
 
 ### 2.4 왜 11/25에 먼저 올리나요?
 
@@ -112,10 +111,10 @@ GUI(도전)는 **v1.0이 완성된 뒤** 윤종하가 시간이 되면 진행합
 
 | 먼저 올릴 함수 | 담당 | 이 함수를 쓰는 사람 |
 |---|---|---|
-| `initFridge`, `addFood`, `freeFridge` | 박지연 | 윤종하(`loadFridge`, 화면), 김기범(`testExpiry`), 최민솔(`testRecipe`) |
-| `initWasteList`, `appendWaste`, `addWaste`, `freeWasteList` | 박지연 | 윤종하(`loadWaste`, 화면) |
-| `getToday`, `daysLeft`, `isValidDate` | 김기범 | 장태현(`inputDate`), 최민솔(`recommend`), 박지연(`discardExpired`), 윤종하(화면) |
-| `initRecipeBook`, `addRecipe`, `freeRecipeBook` | 최민솔 | 윤종하(`loadRecipes`, 화면) |
+| `initFridge`, `addFood`, `freeFridge` | 박지연 | 윤종하(`loadFridge`, 메인 창), 김기범(`sortByExpiry`가 냉장고 구조체 사용), 최민솔(`recommend`, `cookRecipe`) |
+| `initWasteList`, `appendWaste`, `addWaste`, `freeWasteList` | 박지연 | 윤종하(`loadWaste`, 메인 창) |
+| `getToday`, `daysLeft`, `isValidDate` | 김기범 | 김기범(`dlg_food` 날짜 검사), 최민솔(`recommend`), 박지연(`discardExpired`), 윤종하(메인 창) |
+| `initRecipeBook`, `addRecipe`, `freeRecipeBook` | 최민솔 | 최민솔(`dlg_recipe`), 윤종하(`loadRecipes`, 메인 창, `dlg_recommend`) |
 
 급하게 필요한데 아직 안 올라왔으면 단톡방에 말하세요. 기다리는 동안은 내 쪽 함수 안에서 그 함수를 호출하는 줄만 주석 처리하고 나머지부터 만듭니다.
 
@@ -170,8 +169,10 @@ git config --global user.email "GitHub에 가입한 이메일"
 
 | 계층 | 파일 | 해도 되는 것 | 하면 안 되는 것 |
 |---|---|---|---|
-| 로직 | `food`, `expiry`, `recipe`, `stats`, `fileio` | 계산, 구조체 수정, 파일 읽기·쓰기 | `printf`, `scanf`, `getchar`, Win32 API |
-| 화면 | `main`, `ui_console`, `util` | 입출력, 로직 함수 호출 | 구조체 내부(`f->items[i].quantity = ...`)를 직접 고치기 |
+| 로직 | `food`, `expiry`, `recipe`, `stats`, `fileio`, `guide` | 계산, 구조체 수정, 파일 읽기·쓰기 | 창·대화상자·`MessageBox` 등 Win32 화면 API, `printf`, `scanf` |
+| 화면 | `main_gui`, `ui_gui`, `gui_*`, `dlg_*` | 창·입력칸·버튼 처리, 로직 함수 호출 | 구조체 내부(`f->items[i].quantity = ...`)를 직접 고치기 |
+
+(`guide_api`는 인터넷에서 조리법을 받아 오는 모듈이라 통신용 WinHTTP를 쓰지만, 화면 입출력은 하지 않습니다.)
 
 값은 **매개변수**로 받고, 결과는 **반환값이나 포인터**로 돌려줍니다. 어떤 메시지를 보여 줄지는 화면이 정합니다. (파일 읽기·쓰기를 위한 `fopen`은 `fileio`에서 사용해도 됩니다.)
 
@@ -179,7 +180,7 @@ git config --global user.email "GitHub에 가입한 이메일"
 
 | 항목 | 약속 |
 |---|---|
-| 식재료 위치 | `Fridge.items` 배열의 인덱스 `idx` (0부터). 화면의 번호는 `idx + 1` |
+| 식재료 위치 | `Fridge.items` 배열의 인덱스 `idx` (0부터). 메인 창 표의 행 번호(0부터)가 곧 `idx` |
 | 날짜 | `Date` 구조체 `{year, month, day}`. 문자열로는 `YYYY-MM-DD` |
 | D-day | `daysLeft = 유통기한 - 오늘`. **양수 = 남음, 0 = 오늘까지, 음수 = 기한 지남** |
 | 기한 지남 | `daysLeft < 0` |
@@ -217,12 +218,12 @@ git config --global user.email "GitHub에 가입한 이메일"
 
 ```c
 /* food.c
- * 담당: 장태현
+ * 담당: 박지연
  * 설명: 식재료 등록·수정·삭제·수량 변경·검색 (F1, F5)
  */
 ```
 
-`ui_console.c`는 윤종하만 수정합니다.
+`main_gui.c`, `ui_gui.c`, `gui_common.c`, `gui_dialog.c`, `dlg_recommend.c`는 윤종하만 수정합니다.
 
 ### 4.6 인코딩 (한글 깨짐 방지)
 
@@ -232,7 +233,7 @@ git config --global user.email "GitHub에 가입한 이메일"
 | 데이터 (`data/*.txt`) | **ANSI (EUC-KR)**. 메모장 → 다른 이름으로 저장 → 인코딩 ANSI |
 | `README.md` | UTF-8 |
 
-프로젝트 속성에 `/utf-8` 옵션은 **추가하지 않습니다.** (콘솔 한글 출력이 깨집니다.) 자세한 내용은 13.3장.
+프로젝트 속성에 `/utf-8` 옵션은 **추가하지 않습니다.** (화면의 한글 문자열이 깨질 수 있습니다.) 자세한 내용은 13.3장.
 
 ---
 
@@ -293,7 +294,7 @@ git push origin feature/food
 - **`main` 브랜치에 직접 push 하지 않기**
 - 다른 사람 담당 파일을 말없이 고치지 않기
 - `git push --force` 쓰지 않기
-- 빌드가 안 되거나 실행 중 죽는 코드를 PR로 올리지 않기 (최소한 내 `--test` 테스트는 통과)
+- 빌드가 안 되거나 실행 중 죽는 코드를 PR로 올리지 않기 (최소한 내 담당 기능을 6장의 "혼자 확인하기" 순서대로 실행해 보고 올리기)
 - `.vcxproj`, `.slnx` 파일을 임의로 고쳐서 커밋하지 않기
 
 ### 5.6 충돌(conflict)이 났을 때
@@ -304,9 +305,27 @@ git push origin feature/food
 
 ## 6. 팀원별 작업 안내
 
-각 절에는 **만들어야 할 것(정확한 이름과 반환값)**, **구현 요점**, **완료 기준**, **혼자 테스트하는 방법**이 있습니다. 코드 블록의 `...` 부분을 직접 채우면 됩니다.
+각 절에는 **만들어야 할 것(정확한 이름과 반환값)**, **구현 요점**, **완료 기준**, **혼자 확인하는 방법**이 있습니다. 담당 파일은 `include/`(헤더)와 `src/`(소스)에 있습니다.
 
 ### 6.0 시작하기 전에
+
+#### 파일과 담당 (GUI 버전)
+
+| 계층 | 파일 (`.h` + `.c`) | 하는 일 | 담당 |
+|---|---|---|---|
+| 로직 | `food` | 식재료 등록·수정·삭제·수량 변경·검색 (F1, F5) | 박지연 |
+| 로직 | `stats` | 폐기 기록·일괄 폐기·통계 (F6) | 박지연 |
+| 로직 | `expiry` | 날짜 계산·D-day·임박순 정렬·임박 개수 (F2, F4) | 김기범 |
+| 로직 | `recipe` | 요리 추천·재료 자동 차감·레시피 추가 (F3, F5) | 최민솔 |
+| 로직 | `fileio` | 데이터 파일 저장·불러오기 | 윤종하 |
+| 로직 | guide, guide_api | 조리 순서 저장 / 인터넷(API)에서 불러오기 (도전) | 윤종하 |
+| 로직 | pirec | 재료 **이름**으로 API 요리 추천, 양은 비교하지 않음 (도전) | 윤종하 |
+| 화면 | `main_gui`, `ui_gui` | 진입점, 메인 창(식재료 표·기능 버튼), 시작 알림 | 윤종하 |
+| 화면 | `gui_common`, `gui_dialog` | 공통 도우미, 대화상자 틀 | 윤종하 |
+| 화면 | `dlg_simple` | 수량 입력 창, 글 보기(폐기 통계) 창 | **장태현** |
+| 화면 | `dlg_food` | 식재료 등록·수정 창 | 김기범 |
+| 화면 | `dlg_recipe` | 레시피 추가 창 | 최민솔 |
+| 화면 | `dlg_recommend` | 요리 추천 창 + 조리법 자동 불러오기 | 윤종하 |
 
 #### 의존 순서
 
@@ -316,181 +335,140 @@ common.h (윤종하, 전원 확정)
    ├── food (박지연) ──────┐
    ├── expiry (김기범) ────┤
    ├── stats (박지연) ─────┼──> fileio (윤종하: addFood, addRecipe, appendWaste 사용)
-   ├── util (장태현) ──────┤      └──> recipe (최민솔: expiry, food 사용)
-   │                       │
-   └── main.c / ui_console (윤종하: 모든 모듈 연결)
+   │                       │      └──> recipe (최민솔: expiry, food 사용)
+   │
+   ├── gui_common, gui_dialog (윤종하: 화면 공통 도우미·대화상자 틀)
+   │      ├── dlg_simple (장태현: 다른 팀원 파일을 부르지 않음)
+   │      ├── dlg_food (김기범: expiry의 날짜 검사 사용)
+   │      ├── dlg_recipe (최민솔: recipe의 addRecipe 사용)
+   │      └── dlg_recommend (윤종하: recipe, guide, guide_api 사용)
+   │
+   └── main_gui / ui_gui (윤종하: 위의 모든 모듈과 창을 연결)
 ```
 
-`food`, `expiry`, `stats`, `util`은 서로 독립적이라 **동시에** 개발할 수 있습니다. 2.4장의 "먼저 올릴 함수"만 11/25까지 올리면 나머지는 막힘 없이 진행됩니다. (`util`의 `inputDate`만 김기범의 `isValidDate`를 사용합니다.)
+`food`, `expiry`, `stats`, `dlg_simple`은 서로 독립적이라 **동시에** 개발할 수 있습니다. 2.4장의 "먼저 올릴 함수"만 11/25까지 올리면 나머지는 막힘 없이 진행됩니다.
 
-#### 혼자 테스트하는 방법 (`--test`)
+#### 혼자 확인하는 방법
 
-콘솔 프로그램은 `main()`이 하나뿐이라, 각 모듈은 **`src/test_모듈.c`의 테스트 함수**로 따로 확인합니다. 팀장이 뼈대에 아래 파일을 만들어 둡니다. (이름 그대로, 내 모듈 파일만 채웁니다.)
+프로그램이 **GUI 하나**이므로 별도의 테스트 실행 방식(`--test`)은 쓰지 않습니다. 대신 각 절의 **"혼자 확인하기"** 순서대로 프로그램을 직접 실행해서 내 담당 기능을 확인합니다.
 
-| 테스트 파일 | 함수 | 채우는 사람 |
-|---|---|---|
-| `src/test_util.c` | `void testUtil(void)` | 장태현 |
-| `src/test_expiry.c` | `void testExpiry(void)` | 김기범 |
-| `src/test_recipe.c` | `void testRecipe(void)` | 최민솔 |
-| `src/test_food.c` | `void testFood(void)` | 박지연 |
-| `src/test_stats.c` | `void testStats(void)` | 박지연 |
-| `src/test_fileio.c` | `void testFileio(void)` | 윤종하 |
+1. 솔루션 탐색기에서 `FridgeGUI`를 시작 프로젝트로 설정하고 `Ctrl + F5`로 실행합니다.
+2. 내 담당 화면·기능을 시나리오대로 눌러 봅니다. **일부러 잘못된 값**도 넣어 봅니다.
+3. 무엇을 눌러서 어떤 결과가 나왔는지를 **PR 본문**에 적습니다.
+4. 데이터 파일(`data/*.txt`)이 바뀌었으면 커밋하지 말고 원래대로 되돌립니다.
 
-실행 방법: 프로젝트 속성 → 디버깅 → **명령 인수**에 `--test food`를 입력하고 `Ctrl + F5`. (`util`, `expiry`, `recipe`, `food`, `stats`, `fileio` 중 하나. 이 설정은 내 컴퓨터에만 저장됩니다. 테스트가 끝나면 비우세요.)
-
-테스트 파일에서는 `test.h`의 `CHECK`를 씁니다. 통과하면 `[PASS]`, 실패하면 `[FAIL]`과 실패한 조건이 출력됩니다. **테스트 파일은 로직 모듈이 아니므로 `printf`를 써도 됩니다.**
-
-```c
-/* test.h */
-#include <stdio.h>
-#define CHECK(cond) printf("%s  %s\n", (cond) ? "[PASS]" : "[FAIL]", #cond)
-
-int runTest(const char *name);   /* main.c에 있음. "food" 등을 받아 해당 테스트 함수 호출 */
-```
+> 콘솔 버전에 있던 `--test` 단위 테스트 코드(`test_*.c`)는 제거했습니다. 필요하면 `FridgeManager_콘솔버전_백업` 폴더에서 볼 수 있습니다.
 
 ---
 
 ### 6.1 윤종하 (팀장)
 
-**담당:** `common.h`, `main.c`, `ui_console.c/h`(모든 화면), `fileio.c/h`, `test.h`와 `test_*.c` 틀, 프로젝트 설정
-**브랜치:** `feature/skeleton`, `feature/main`, `feature/fileio`
+**담당:** `common.h`, `fileio`, `guide`, `guide_api`(도전), `apirec`(도전), `main_gui.c`, `ui_gui`, `gui_common`, `gui_dialog`, `dlg_recommend`, 프로젝트 설정
+**브랜치:** `feature/skeleton`, `feature/gui`, `feature/fileio`, `feature/guide`
 
 #### 11/23(월)까지: 뼈대 코드 업로드 (가장 중요)
 
 팀원 전원이 이것을 받아서 시작합니다. 아래를 모두 갖춘 상태로 `main`에 올립니다.
 
 - [ ] `common.h`: 11장 그대로 + 4.3장의 파일 경로 상수
-- [ ] 로직 모듈 5개의 `.h`: 6.2~6.5장에 적힌 함수 선언을 **그대로** 복사
-- [ ] 각 `.c`: 함수마다 컴파일만 되는 빈 껍데기 (반환값만 `return RC_OK;`, `return 0;` 등)
-- [ ] `ui_console.h/.c`: 화면 함수 빈 껍데기
-- [ ] `util.h/.c`: 함수 선언과 빈 껍데기
-- [ ] `test.h`, `test_util.c`, `test_food.c`, `test_expiry.c`, `test_recipe.c`, `test_stats.c`, `test_fileio.c`: 빈 `testXxx()` 함수
-- [ ] `.vcxproj`: 위 `test_*.c` 파일 추가, `_CRT_SECURE_NO_WARNINGS` 정의 추가, 디버깅 작업 디렉터리를 `$(SolutionDir)`로 설정 (13.2장)
-- [ ] `data/` 폴더: `fridge.txt`, `waste.txt` (샘플 몇 줄), `recipes.txt` (빈 파일. 최민솔이 채움). **ANSI로 저장**
+- [ ] 로직 모듈의 `.h`(`food`, `expiry`, `recipe`, `stats`, `fileio`, `guide`): 6.3~6.5장에 적힌 함수 선언을 **그대로** 복사
+- [ ] 각 로직 `.c`: 함수마다 컴파일만 되는 빈 껍데기 (반환값만 `return RC_OK;`, `return 0;` 등)
+- [ ] `gui_common`, `gui_dialog`: 동작하는 공통 도우미와 대화상자 틀
+- [ ] `ui_gui`, `main_gui`: 메인 창이 뜨고 버튼이 있는 뼈대 (각 버튼은 아직 "준비 중" 안내)
+- [ ] `dlg_simple`, `dlg_food`, `dlg_recipe`, `dlg_recommend`의 `.h`와 빈 함수 (`return 0;`)
+- [ ] `FridgeGUI.vcxproj`와 `.filters`: 위 파일 등록, `include`를 추가 포함 디렉터리로 지정, `_CRT_SECURE_NO_WARNINGS` 정의, 디버깅 작업 디렉터리를 `$(SolutionDir)`로 설정 (13.2장)
+- [ ] `data/` 폴더: `fridge.txt`, `waste.txt` (샘플 몇 줄), `recipes.txt` (빈 파일. 최민솔이 채움), `steps.txt`. **ANSI로 저장**
 - [ ] 빌드와 실행이 오류 없이 되는지 확인한 뒤 단톡방에 공지
 
-#### main.c
+#### main_gui.c
 
 ```c
-/* main.c
- * 담당: 윤종하
- */
-#include <string.h>
-#include "common.h"
-#include "food.h"
-#include "recipe.h"
-#include "stats.h"
-#include "fileio.h"
-#include "ui_console.h"
-#include "test.h"
-
-int main(int argc, char *argv[])
+int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrev, PWSTR cmdLine, int nShow)
 {
     AppData app;
 
-    if (argc == 3 && strcmp(argv[1], "--test") == 0)
-        return runTest(argv[2]);              /* 모듈 단독 테스트 */
-
-    initFridge(&app.fridge);
-    initRecipeBook(&app.recipes);
-    initWasteList(&app.waste);
-
+    initFridge(&app.fridge);   initRecipeBook(&app.recipes);   initWasteList(&app.waste);
     loadFridge(FRIDGE_FILE, &app.fridge);
     loadRecipes(RECIPE_FILE, &app.recipes);
     loadWaste(WASTE_FILE, &app.waste);
 
-    showStartupAlert(&app.fridge);            /* F4 */
-    runMainMenu(&app);                        /* 0을 고를 때까지 반복 */
+    guiShowStartupAlert(&app.fridge);        /* F4: 시작 알림 팝업 */
+    guiRun(hInst, &app, nShow);              /* 창을 닫을 때까지 */
 
     saveFridge(FRIDGE_FILE, &app.fridge);
     saveRecipes(RECIPE_FILE, &app.recipes);
     saveWaste(WASTE_FILE, &app.waste);
 
-    freeFridge(&app.fridge);
-    freeRecipeBook(&app.recipes);
-    freeWasteList(&app.waste);
+    freeFridge(&app.fridge);   freeRecipeBook(&app.recipes);   freeWasteList(&app.waste);
     return 0;
 }
 ```
 
-`runTest`도 `main.c`에 둡니다. `"util"`이면 `testUtil()`, `"food"`면 `testFood()` 식으로 `strcmp`로 나눠 호출하고, 모르는 이름이면 사용법을 출력하고 `1`을 반환합니다.
+`data/` 폴더를 못 찾으면 실행 파일 위치에서 위쪽 폴더로 올라가며 찾습니다. (`.exe`를 직접 실행해도 동작)
 
-#### ui_console.c: 메인 메뉴
+#### 메인 창 (ui_gui.c)
 
-```c
-void runMainMenu(AppData *app)
-{
-    int choice;
-    do {
-        printMainMenu();                         /* 15장의 메인 메뉴 화면 출력 */
-        choice = inputInt("선택 > ", 0, 7);
-        switch (choice) {
-        case 1: screenAddFood(app);         break;   /* 장태현 */
-        case 2: screenFoodList(app);        break;   /* 김기범 */
-        case 3: screenEditFood(app);        break;   /* 장태현 */
-        case 4: screenRecommend(app);       break;   /* 최민솔 */
-        case 5: screenAddRecipe(app);       break;   /* 최민솔 */
-        case 6: screenDiscardExpired(app);  break;   /* 박지연 */
-        case 7: screenWasteStats(app);      break;   /* 박지연 */
-        }
-    } while (choice != 0);
-}
-```
+식재료 표(임박순 정렬, 기한 지남 = 빨강, 임박 = 주황)와 오른쪽 기능 버튼으로 구성됩니다. 각 버튼이 부르는 담당자 파일은 아래와 같습니다.
 
-#### ui_console.c: 모든 화면 함수
+| 버튼 | 동작 | 부르는 것 |
+|---|---|---|
+| 식재료 등록 | 등록 창 → 같은 재료(이름·유통기한·보관 방법 동일)면 수량을 합치고 안내 | `dlg_food`(김기범) → `addFood`(박지연) |
+| 수정 | 선택한 행을 수정 창으로 수정, 다른 재료와 같아지면 합침 | `dlg_food` → `updateFood` |
+| 수량 변경 | 숫자 입력 창 → 줄이면 `useFood`, 늘리면 `updateFood` | `dlg_simple`(장태현) |
+| 삭제 | 삭제 확인 → "폐기로 기록할까요?" → 삭제 | `addWaste`, `removeFood`(박지연) |
+| 요리 추천 | 추천 창 (요리하기·레시피 추가·조리법 불러오기) | `dlg_recommend` |
+| 레시피 추가 | 레시피 추가 창 | `dlg_recipe`(최민솔) |
+| 기한 지난 재료 폐기 | 확인 후 일괄 폐기 | `discardExpired`(박지연) |
+| 폐기 통계 | 통계 창 | `computeWasteStats`(박지연), `textDialog`(장태현) |
 
-화면은 모두 윤종하가 작성합니다. 사용하는 로직 함수는 담당 팀원이 만든 것이므로 이름과 반환값을 6.2~6.5장 그대로 호출합니다. 화면 예시는 15장입니다.
+#### 화면 공통 (gui_common, gui_dialog)
 
-##### 식재료 등록·수정·삭제 화면
+- `gui_common.h`: 문자 변환(`ansiToWide`, `wideToAnsi`), 메시지 창(`msg`, `ask`, `bad`), 컨트롤 만들기(`mk`), 표 도우미(`lvAdd` 등), 목록 갱신(`refreshMain`)
+- `gui_dialog.h`: 모든 대화상자가 쓰는 틀(`DlgBase`, `runDialog`). 팀원은 이 틀에 맞춰 자기 `dlg_*` 파일을 만듭니다.
+
+#### 조리법 자동 불러오기 (guide, guide_api, dlg_recommend) — 도전 목표
 
 ```c
-void screenAddFood(AppData *app);    /* 메뉴 1: 이름, 유통기한, 수량, 보관 방법을 입력받아 addFood */
-void screenEditFood(AppData *app);   /* 메뉴 3: 수정 / 삭제 / 수량 변경 */
+/* guide.h : 조리 순서 저장·조회 (data/steps.txt) */
+int        getRecipeSteps(const char *recipeName, char steps[][STEP_LEN], int max);
+ResultCode addRecipeSteps(const char *recipeName, char steps[][STEP_LEN], int count);
+ResultCode replaceRecipeSteps(const char *recipeName, char steps[][STEP_LEN], int count);
+
+/* guide_api.h : 식품안전나라 API (인증키: data/api_key.txt 또는 환경변수) */
+int       hasApiKey(void);
+ApiResult fetchRecipeSteps(const char *recipeName, char steps[][STEP_LEN], int max,
+                           int *outCount, char *matchedName, int matchedLen);
 ```
 
-- `screenAddFood`: `inputWord`, `inputDate`, `inputInt`(수량 1~999), 보관 방법(0 냉장, 1 냉동)을 받아 `addFood`를 호출하고, 반환값에 맞는 메시지를 출력합니다. (`RC_OK`면 "등록되었습니다", 같은 재료를 합쳤으면 합쳤다고 안내하면 더 좋습니다.)
-- `screenEditFood`: `sortByExpiry`(김기범) 후 `printFoodTable`(김기범)로 목록을 보여 주고, **화면 번호 − 1 = `idx`**로 재료를 고릅니다(0은 취소). 이어서 `1 수정 / 2 삭제 / 3 수량 변경`을 처리합니다.
-  - 삭제: "폐기로 기록할까요? (y/n)"를 묻고, `y`면 `addWaste(&app->waste, &item, getToday())` 후 `removeFood`, `n`이면 `removeFood`만 (F6 연결)
-  - 수량 변경: 줄이면 `useFood`, 늘리면 `updateFood`
+요리 추천 창에서 요리를 고르면 조리 순서가 없을 때 자동으로 `fetchRecipeSteps`를 호출합니다. 호출은 별도 스레드에서 하고, 받은 결과는 `replaceRecipeSteps`로 저장합니다. 설정은 14.1장입니다.
 
+#### API 요리 추천 (apirec) — 도전 목표
 
-##### 시작 알림·목록 화면
+요리 추천을 **인터넷 레시피(API)로** 합니다. 재료의 양·개수는 보지 않고, **내 재료 이름이 요리의 재료 정보에 나오는지만** 대조합니다.
 
 ```c
-void showStartupAlert(const Fridge *f);     /* F4: 시작 알림 박스. 마지막에 waitForKey() */
-void printFoodTable(const Fridge *f);       /* 목록 표 출력. 번호는 1부터 (idx + 1) */
-void screenFoodList(AppData *app);          /* 메뉴 2: sortByExpiry 후 printFoodTable */
+/* apirec.h */
+int       collectIngredients(const Fridge *f, IngredientRef *out, int max);   /* 기한이 지나지 않은 재료 이름 (임박 먼저) */
+ApiResult apiRecommend(const IngredientRef *ings, int n,
+                       ApiRecommendation *out, int maxOut, int *outCount);    /* API로 찾고 이름 대조, 점수순 */
+
+/* guide_api.h */
+ApiResult fetchRecipesByIngredient(const char *ingredient, ApiRecipe *out, int max, int *outCount);
 ```
 
-- `showStartupAlert`: 15장의 테두리 박스 형태. 기한 지난 재료·임박 재료의 **이름과 D-day**를 나열합니다. 둘 다 0이면 박스 대신 "임박한 재료가 없습니다" 한 줄만 보여 줍니다.
-- `printFoodTable`: 15장의 표 형식. 남은 기간 칸은 `formatDday`로 만들고 기한이 지났으면 ` (지남)`, 임박이면 ` (임박)`을 붙입니다. 목록이 비었으면 "등록된 식재료가 없습니다".
-- `printFoodTable`은 **장태현의 `screenEditFood`에서도 부르므로** 함수 이름과 인자를 바꾸지 않습니다. 번호 = 배열 인덱스 + 1이어야 합니다.
+| 단계 | 내용 |
+|---|---|
+| 1. 질의 | 내 재료 이름마다 API에 "이 재료가 들어간 요리"를 묻는다 (임박 재료 먼저, 최대 8회). `계란`은 `달걀`로도 묻는다 |
+| 2. 합치기 | 받은 요리를 모아 같은 이름은 하나로 합친다 |
+| 3. 이름 대조 | 요리의 **재료 정보 글**에 내 재료 이름이 나오는지 센다 (양·개수는 보지 않음, `달걀`=`계란`) |
+| 4. 점수 | 나온 재료 수 × 10 + 그중 임박 재료 수 × 5. 점수 높은 순, 최대 30개 |
 
+- 요리 이름·재료 정보·조리 순서가 **한 번의 응답**에 같이 오므로 조리법을 따로 부르지 않습니다.
+- 인터넷 호출은 별도 스레드에서 하고, 냉장고는 창에서 이름만 복사해 넘깁니다. (스레드는 냉장고를 직접 읽지 않음)
+- 인증키가 있으면 요리 추천 창이 **인터넷 추천**으로 열리고, 없거나 실패하면 저장된 레시피(`recipe`)로 추천합니다. `[저장 레시피로 보기]` / `[인터넷 추천 보기]` 버튼으로 오갈 수 있습니다.
+- 인터넷 추천은 양을 비교하지 않으므로 **재료 자동 차감(`요리하기`)은 저장된 레시피 추천에서만** 쓸 수 있습니다.
 
-##### 요리 추천·레시피 추가 화면
-
-```c
-void screenRecommend(AppData *app);   /* 메뉴 4: 추천 목록 → 번호 선택 → 확인 → cookRecipe */
-void screenAddRecipe(AppData *app);   /* 메뉴 5: 사용자 레시피 추가 */
-```
-
-- `screenRecommend`: `Recommendation out[20]`에 `recommend`를 호출해 15장의 화면대로 출력합니다. 번호를 고르면 "계란 3개, 대파 1개 사용. 만들까요? (y/n)"를 묻고, `y`면 `cookRecipe`를 호출한 뒤 "계란 6 → 3, 대파 1 → 0 (삭제)"처럼 **차감 전후 수량**을 보여 줍니다. `canCook`이 0인 요리를 고르면 부족한 재료를 안내합니다. 추천이 0개면 "추천할 요리가 없습니다".
-- `screenAddRecipe`: 요리 이름 → 재료 개수(1~`MAX_ING`) → 재료마다 이름·수량을 입력받아 `Recipe`를 채우고 **`isCustom = 1`**로 `addRecipe`를 호출합니다.
-
-
-##### 폐기·통계 화면
-
-```c
-void screenDiscardExpired(AppData *app);        /* 메뉴 6: 기한 지난 재료 일괄 폐기 */
-void screenWasteStats(const AppData *app);      /* 메뉴 7: 폐기 기록 통계 */
-```
-
-- `screenDiscardExpired`: `countAlerts`로 기한 지난 재료 개수를 보여 주고 "N개를 폐기 처리할까요? (y/n)". `y`면 `discardExpired`를 호출하고 폐기 개수를 출력합니다. 0개면 "기한 지난 재료가 없습니다".
-- `screenWasteStats`: `computeWasteStats(&app->waste, getToday(), &s)`를 호출하고 15장의 화면대로 출력합니다. 냉장·냉동 비율은 `fridgeCount * 100 / totalRecords`로 계산하되, **`totalRecords == 0`이면 0으로 나누지 말고** "아직 폐기 기록이 없습니다"를 출력합니다. 마지막 줄의 팁은 냉장 비율 등 조건에 따라 문구를 정하세요.
-
-
-
-#### fileio.c/h
+#### fileio (파일 저장·불러오기)
 
 ##### fileio.h
 
@@ -528,149 +506,102 @@ while (fscanf(fp, "%29s %d-%d-%d %d %d",
 
 `recipes.txt`는 한 줄의 길이가 다르므로 `이름`, `사용자추가여부`, `재료개수`를 먼저 읽고, 재료 개수만큼 `이름 수량` 쌍을 반복해서 읽습니다. 재료 개수가 `MAX_ING`보다 크면 그 줄은 건너뜁니다. `(int *)&item.storage`가 어렵다면 `int s;`로 읽은 뒤 `item.storage = (Storage)s;`로 바꿔도 됩니다.
 
-##### 혼자 테스트하기 (`--test fileio`)
-
-```c
-/* test_fileio.c : 저장 → 불러오기 왕복 확인 */
-#include "test.h"
-#include "fileio.h"
-#include "food.h"
-
-void testFileio(void)
-{
-    Fridge a, b;
-    Food egg = { "계란", { 2026, 11, 12 }, 6, FRIDGE };
-
-    initFridge(&a);
-    initFridge(&b);
-    addFood(&a, &egg);
-
-    CHECK(saveFridge("data/test_fridge.txt", &a) == RC_OK);
-    CHECK(loadFridge("data/test_fridge.txt", &b) == RC_OK);
-    CHECK(b.count == 1 && b.items[0].quantity == 6);
-    CHECK(loadFridge("data/없는파일.txt", &b) == RC_OK);    /* 파일이 없어도 RC_OK */
-    CHECK(saveFridge("없는폴더/x.txt", &a) == RC_FILE_ERROR);
-
-    freeFridge(&a);
-    freeFridge(&b);
-}
-```
-
-`testFileio`가 만든 `data/test_fridge.txt`는 커밋하지 말고 삭제합니다.
-
 ##### fileio 완료 기준
 - 저장한 뒤 다시 불러오면 항목 수와 값이 저장 전과 똑같다 (재료, 레시피, 폐기 기록 모두)
 - 데이터 파일이 없어도 프로그램이 정상 시작한다
 - 한글 이름이 저장·불러오기 후에도 깨지지 않는다 (파일이 **ANSI**여야 함)
 
-#### 완료 기준
-- 뼈대만 있는 상태에서도 메뉴가 뜨고, 모든 번호가 오류 없이 돌아온다
-- 0을 입력하면 세 파일이 저장되고 메모리가 해제된 뒤 종료된다
-- 모든 PR을 4.x장 약속 기준으로 검토한다: 로직에 `printf` 없음, 담당자 표시, 테스트 통과, `NULL` 검사
+#### 6.1 완료 기준
+- 메인 창이 뜨고, 모든 버튼이 오류 없이 동작하고 돌아온다
+- 창을 닫으면 세 파일이 저장되고 메모리가 해제된 뒤 종료된다
+- 모든 PR을 4.x장 약속 기준으로 검토한다: 로직에 화면 코드 없음, 담당자 표시, "혼자 확인하기" 결과가 PR에 적혀 있음, `NULL` 검사
 
 #### 개발 외 업무
-- GitHub 저장소 관리, 팀원 Collaborator 초대, PR 검토·`main` 병합, 버전 태그(v1.0, v2.0)
+- GitHub 저장소 관리, 팀원 Collaborator 초대, PR 검토·`main` 병합, 버전 태그(v1.0)
 - 주간 회의 진행, 회의록, WBS 일정 관리
-- 제안보고서·결과보고서 취합 (각자 맡은 모듈 설명을 받아서 정리), README 관리, 발표 PPT
+- 제안보고서·결과보고서 취합 (각자 맡은 파일 설명을 받아서 정리), README 관리, 발표 PPT
 
 ---
 
-### 6.2 장태현 (util)
+### 6.2 장태현 (dlg_simple)
 
-**담당:** `util.c/h`, `test_util.c`
-**브랜치:** `feature/util`
+**담당:** `include/dlg_simple.h`, `src/dlg_simple.c`
+**브랜치:** `feature/dlg-simple`
 
-장태현은 **최종 발표**를 맡고 있어서 가장 작은 모듈 하나만 맡습니다. 입력 함수 몇 개로 이루어져 있고, 프로그램이 잘못된 입력에도 멈추지 않게 하는 중요한 역할입니다.
+장태현은 **최종 발표**를 맡고 있어서 **가장 작고 쉬운 파일 1쌍**만 맡습니다. 입력칸 하나짜리 작은 창 두 개로 이루어져 있고, **다른 팀원의 파일을 부르지 않아서** 기다릴 필요가 없습니다.
 
-#### util.h
+#### dlg_simple.h
 
 ```c
-#ifndef UTIL_H
-#define UTIL_H
-#include "common.h"
+#ifndef DLG_SIMPLE_H
+#define DLG_SIMPLE_H
+#include "gui_common.h"
 
-void clearInputBuffer(void);                              /* 입력 버퍼에 남은 줄 비우기 */
-int  inputInt(const char *msg, int min, int max);         /* min~max 정수가 나올 때까지 반복 입력 */
-int  inputDate(const char *msg, Date *d);                 /* YYYY-MM-DD 입력. 성공 1, "0" 입력(취소) 0 */
-void inputWord(const char *msg, char *buf, int bufLen);   /* 공백 없는 단어 입력 (이름용) */
-int  inputYesNo(const char *msg);                         /* y/Y면 1, n/N이면 0 */
-void waitForKey(void);                                    /* 아무 키나 누를 때까지 대기 (_getch) */
+int  promptNumber(HWND owner, const wchar_t *title, const wchar_t *label,
+                  int initial, int min, int max, int *out);   /* 숫자 한 개 입력 */
+void textDialog(HWND owner, const wchar_t *title, const wchar_t *text);   /* 여러 줄 글 보기 */
 
 #endif
 ```
 
-구현 요점
-- 입력은 `scanf`로 바로 받지 말고 **`fgets`로 한 줄을 받은 뒤 `sscanf`로 해석**합니다. 문자를 입력해도 무한 반복하지 않습니다.
-- `inputDate`는 `sscanf(line, "%d-%d-%d", ...)`로 읽고, `isValidDate`(김기범)로 검사합니다. 틀리면 이유를 안내하고 다시 입력받습니다. 김기범의 PR이 올라오기 전에는 월 1~12, 일 1~31만 검사하도록 임시로 두세요.
-- `inputWord`는 공백이 들어오면 거절하고, `bufLen - 1`바이트를 넘으면 잘라냅니다.
+| 함수 | 쓰이는 곳 | 동작과 반환값 |
+|---|---|---|
+| `promptNumber` | 메인 창 [수량 변경] | 숫자 입력칸 하나와 확인·취소 버튼. 처음에 `initial`을 보여 주고 `min`~`max` 숫자만 받는다. 확인하면 `*out`에 값을 넣고 **1**, 취소하거나 닫으면 **0** |
+| `textDialog` | 메인 창 [폐기 통계] | 글을 보여 주는 창. 닫기 버튼 하나. 반환값 없음 |
+
+#### 구현 요점
+
+- 대화상자는 `gui_dialog.h`의 틀을 씁니다. 구조체 **맨 앞에 `DlgBase`**를 두고, `onCreate`(컨트롤 만들기)와 `onCommand`(버튼 처리)를 연결한 뒤 `runDialog`로 띄웁니다.
+- 컨트롤은 `gui_common.h`의 `mk()`로 만듭니다. 입력이 잘못되면 `bad()`로 안내하고 입력칸으로 커서를 돌려 줍니다. **이때 창은 닫지 않습니다.**
+- 숫자는 `GetDlgItemInt`로 읽고 범위를 검사합니다. 입력칸에 `ES_NUMBER` 스타일을 주면 숫자만 칠 수 있습니다.
+- Enter는 확인(`IDOK`), Esc는 취소(`IDCANCEL`)로 동작해야 합니다.
 
 ```c
-int inputInt(const char *msg, int min, int max)
+/* 구조체 맨 앞에 DlgBase를 둔다 */
+typedef struct { DlgBase b; const wchar_t *label; int initial, min, max; int value; int ok; } NumDlg;
+
+static void numCommand(HWND h, DlgBase *base, int id, int code)
 {
-    char line[64];
-    int value;
-    while (1) {
-        printf("%s", msg);
-        if (fgets(line, sizeof(line), stdin) == NULL)
-            return min;                                  /* 입력 끝(EOF) 보호 */
-        if (sscanf(line, "%d", &value) == 1 && value >= min && value <= max)
-            return value;
-        printf("%d ~ %d 사이의 숫자를 입력하세요.\n", min, max);
+    NumDlg *d = (NumDlg *)base;
+    if (id == IDCANCEL) { d->b.done = 1; return; }          /* 창 닫기 */
+    if (id == IDOK) {
+        ...   /* 입력값을 읽고 범위 검사: 틀리면 bad(...) 후 return, 맞으면 d->ok = 1; d->b.done = 1; */
     }
 }
 ```
 
 #### 완료 기준
-- `inputInt`에 글자, 빈 줄, 범위 밖 숫자를 넣어도 다시 입력받을 뿐 멈추거나 무한 반복하지 않는다
-- `inputDate`에 `2026-02-30`, `2026-13-01`, `abc`를 넣으면 거절하고 다시 받는다. `0`을 넣으면 0을 반환한다
-- `inputWord`에 공백이 든 입력은 거절하고, 너무 긴 입력은 `bufLen - 1`바이트로 자른다
-- `inputYesNo`는 `y`, `Y`, `n`, `N`만 받는다
+- `promptNumber`에 빈칸, 범위 밖 숫자를 넣으면 안내만 나오고 창이 닫히지 않는다
+- 확인하면 1을 반환하고 `*out`에 입력값이 들어간다. 취소·Esc·닫기(X)는 0을 반환하고 `*out`은 바뀌지 않는다
+- 창이 열려 있는 동안 뒤의 메인 창은 눌러지지 않는다 (`runDialog`가 처리)
+- `textDialog`는 닫기 버튼과 Enter·Esc로 닫힌다
 
-#### 혼자 테스트하기 (`--test util`)
+#### 혼자 확인하기
 
-사람이 직접 입력해 보는 테스트입니다. 잘못된 값도 일부러 넣어 보세요.
-
-```c
-/* test_util.c */
-#include <stdio.h>
-#include "test.h"
-#include "util.h"
-
-void testUtil(void)
-{
-    int n;
-    Date d;
-    char name[NAME_LEN];
-
-    n = inputInt("1~10 사이 숫자 > ", 1, 10);
-    printf("입력한 숫자: %d\n", n);
-
-    inputWord("재료 이름 > ", name, sizeof(name));
-    printf("입력한 이름: %s\n", name);
-
-    if (inputDate("유통기한 (YYYY-MM-DD, 0=취소) > ", &d))
-        printf("입력한 날짜: %04d-%02d-%02d\n", d.year, d.month, d.day);
-    else
-        printf("취소했습니다.\n");
-
-    printf("y/n 결과: %d\n", inputYesNo("계속할까요? (y/n) > "));
-}
-```
+1. 프로그램을 실행하고 표에서 재료 하나를 선택한 뒤 **수량 변경**을 누른다
+2. 입력칸을 비우고 확인 → 안내가 나오고 창이 유지되는지
+3. `0`, `1000`을 넣고 확인 → 1~999 범위 안내가 나오는지
+4. `5`를 넣고 확인 → 표의 수량이 5로 바뀌는지. 다시 열어서 **취소**하면 바뀌지 않는지
+5. **폐기 통계** 버튼을 눌러 통계 창이 열리고 닫기·Esc로 닫히는지
 
 #### 개발 외 업무: 최종 발표와 데모 시연
 - 시연 순서 정리: 시작 알림 → 목록 → 등록 → 요리 추천 → 요리하기 → 폐기 통계
-- 예상 질문과 답변 정리 (예: "왜 로직과 화면을 나눴나요?", "추천 점수는 어떻게 정했나요?")
+- 예상 질문과 답변 정리 (예: "왜 로직과 화면을 나눴나요?", "추천 점수는 어떻게 정했나요?", "조리법은 어떻게 자동으로 불러오나요?")
 - 리허설 1회 이상
 - 산출물: 시연 시나리오, 예상 질문 정리
 
 ---
 
-### 6.3 김기범 (expiry)
+### 6.3 김기범 (expiry, dlg_food)
 
-**담당:** `expiry.c/h`, `test_expiry.c`
-**브랜치:** `feature/expiry`
+**담당:** `expiry.c/h`, `dlg_food.c/h`
+**브랜치:** `feature/expiry`, `feature/dlg-food`
 
-#### expiry.h
+`expiry`를 먼저 만들고(11/25 먼저 올릴 함수, 11/29 전체), 그다음 `dlg_food`를 만듭니다(12/03).
+
+#### expiry
+
+##### expiry.h
 
 ```c
 #ifndef EXPIRY_H
@@ -724,64 +655,70 @@ static int compareFood(const void *p, const void *q)
 }
 ```
 
-#### 완료 기준
+##### expiry 완료 기준
 - `daysBetween({2026,11,9}, {2026,11,12}) == 3`, 월말·연말을 넘겨도 정확하다 (`{2026,2,28}` → `{2026,3,1}`은 1일, 윤년 `{2028,2,28}` → `{2028,3,1}`은 2일)
 - `isValidDate({2026,2,29}) == 0`, `isValidDate({2028,2,29}) == 1`, 월 13이나 일 0은 0
 - 정렬 후 `items[0]`이 가장 유통기한이 빠른 재료다
 - 재료가 하나도 없어도 `countAlerts`와 `sortByExpiry`가 죽지 않는다
 
-#### 혼자 테스트하기 (`--test expiry`)
+#### dlg_food (식재료 등록·수정 창)
+
+##### dlg_food.h
 
 ```c
-/* test_expiry.c */
-#include <string.h>
-#include "test.h"
-#include "expiry.h"
-#include "food.h"
+#ifndef DLG_FOOD_H
+#define DLG_FOOD_H
+#include "gui_common.h"
 
-void testExpiry(void)
-{
-    Date a = { 2026, 11, 9 }, b = { 2026, 11, 12 };
-    Date leap = { 2028, 2, 29 }, noLeap = { 2026, 2, 29 };
-    Fridge f;
-    Food x = { "우유", { 2000, 1, 1 }, 1, FRIDGE };    /* 오래전 날짜 = 기한 지남 */
-    Food y = { "두부", { 2099, 1, 1 }, 1, FRIDGE };
-    char buf[32];
-    int expired, soon;
+/* 입력을 받아 food에 채운다. isEdit=1이면 food의 현재 값을 채워서 보여 준다.
+ * 등록/수정을 눌렀으면 1, 취소면 0 */
+int foodDialog(HWND owner, Food *food, int isEdit);
 
-    CHECK(daysBetween(a, b) == 3);
-    CHECK(isValidDate(leap) == 1);
-    CHECK(isValidDate(noLeap) == 0);
-    CHECK(daysLeft(getToday()) == 0);
-
-    formatDday(3, buf, sizeof(buf));   CHECK(strcmp(buf, "D-3") == 0);
-    formatDday(0, buf, sizeof(buf));   CHECK(strcmp(buf, "D-DAY") == 0);
-    formatDday(-2, buf, sizeof(buf));  CHECK(strcmp(buf, "D+2") == 0);
-
-    initFridge(&f);
-    addFood(&f, &y);
-    addFood(&f, &x);                                   /* 일부러 순서를 거꾸로 넣는다 */
-    sortByExpiry(&f);
-    CHECK(strcmp(f.items[0].name, "우유") == 0);
-    countAlerts(&f, &expired, &soon);
-    CHECK(expired == 1 && soon == 0);
-    freeFridge(&f);
-}
+#endif
 ```
 
-`testExpiry`는 `addFood`를 쓰므로 박지연의 11/25 PR이 `main`에 들어온 뒤에 실행됩니다. 그 전에는 `f.items`에 직접 값을 넣는 임시 코드로 확인하세요.
+| 입력칸 | 검사 |
+|---|---|
+| 이름 | 비어 있으면 안 되고 **공백 불가**, 한글 **14자 이내** (`readName` 사용) |
+| 유통기한 | `YYYY-MM-DD`. `parseDate`(`gui_common`)가 `isValidDate`(김기범)로 검사. 새로 등록할 때는 오늘 날짜를 처음에 채워 둔다 |
+| 수량 | 1~999 숫자 |
+| 보관 | 냉장 / 냉동 선택 (기본 냉장) |
+
+구현 요점
+- 대화상자 틀(`gui_dialog.h`)을 씁니다. 6.2장의 `dlg_simple`과 같은 방식(`DlgBase` → `onCreate`/`onCommand` → `runDialog`)입니다.
+- 검사에 실패하면 `bad()`로 안내하고 해당 입력칸으로 커서를 돌려 줍니다. 창은 닫지 않습니다.
+- `isEdit == 1`이면 열 때 `food`의 현재 값을 각 칸에 채우고, 버튼 글자는 "수정"입니다.
+- 이 창은 **입력만 받습니다.** `addFood`·`updateFood` 호출은 메인 창(`ui_gui`)이 합니다.
+
+##### dlg_food 완료 기준
+- `2026-02-30`, `2026-13-01`, `abc`, 빈칸을 넣으면 안내만 나오고 창이 유지된다
+- 이름에 공백이 있거나 한글 14자를 넘으면 거절한다
+- 수량 `0`, `1000`, 글자를 거절한다
+- 수정 창을 열면 선택한 재료의 값이 채워져 있고, 취소하면 재료가 바뀌지 않는다
+
+#### 혼자 확인하기
+
+1. **expiry:** 유통기한이 지난 재료, 오늘까지인 재료, 3일 뒤인 재료를 등록한다. 표가 **유통기한 빠른 순**으로 정렬되고, 남은 기간이 `D+n (지남)`, `D-DAY (임박)`, `D-3`으로 나오는지, 기한 지남은 빨강·임박은 주황인지 확인한다
+2. **expiry:** 프로그램을 껐다 켜면 시작 알림 팝업의 "지난 재료"·"임박 재료" 개수가 위 재료 수와 맞는지 확인한다
+3. **expiry:** 윤년 `2028-02-29`는 등록되고, `2026-02-29`는 거절되는지 확인한다
+4. **dlg_food:** 위 "완료 기준"의 잘못된 값을 하나씩 넣어 본다
+5. 같은 이름·같은 유통기한·같은 보관 방법으로 두 번 등록하면 한 줄로 합쳐지는지 확인한다 (합치는 일은 `addFood`, 안내는 메인 창)
 
 #### 개발 외 업무
 - 프로그램 흐름도 작성 (발표 PPT의 "3.3 프로그램 흐름도" 기준, 제안·결과보고서에 들어갈 그림)
 
 ---
 
-### 6.4 최민솔 (recipe)
+### 6.4 최민솔 (recipe, dlg_recipe)
 
-**담당:** `recipe.c/h`, `data/recipes.txt`, `test_recipe.c`
-**브랜치:** `feature/recipe`
+**담당:** `recipe.c/h`, `dlg_recipe.c/h`, `data/recipes.txt`
+**브랜치:** `feature/recipe`, `feature/dlg-recipe`
 
-#### recipe.h
+`recipe`를 먼저 만들고(11/25 먼저 올릴 함수, 12/03 전체), 이어서 `dlg_recipe`를 만듭니다(12/03).
+
+#### recipe
+
+##### recipe.h
 
 ```c
 #ifndef RECIPE_H
@@ -825,52 +762,53 @@ ResultCode cookRecipe(Fridge *f, const Recipe *rc);       /* F5: 재료 자동 �
 
 12장의 형식으로 **기본 레시피 20개 이상**을 작성합니다. ANSI로 저장하고, 재료 이름은 팀 전체가 똑같이 쓰도록 흔한 이름으로 통일합니다. (`계란`, `대파`, `양파`, `두부`, `김치`, `돼지고기`, `밥` 처럼. `달걀`과 `계란`을 섞어 쓰지 않기.) 사용자가 등록하는 재료와 이름이 같아야 매칭됩니다. 12/07 전에 작성이 끝나야 통합 테스트를 할 수 있습니다.
 
-#### 완료 기준
+##### recipe 완료 기준
 - 재료가 충분한 레시피는 `canCook == 1`이고 점수가 가장 높다
 - 재료가 절반 미만인 레시피는 추천에 나오지 않는다
 - `cookRecipe`는 재료가 하나라도 부족하면 **아무것도 차감하지 않는다**
 - 같은 재료가 유통기한이 다른 두 줄이면 **빠른 줄부터** 차감한다
 - 레시피 20개 이상, 기본 레시피는 `isCustom == 0`
 
-#### 혼자 테스트하기 (`--test recipe`)
+#### dlg_recipe (레시피 추가 창)
+
+##### dlg_recipe.h
 
 ```c
-/* test_recipe.c */
-#include "test.h"
-#include "recipe.h"
-#include "food.h"
+#ifndef DLG_RECIPE_H
+#define DLG_RECIPE_H
+#include "gui_common.h"
 
-void testRecipe(void)
-{
-    Fridge f;
-    RecipeBook rb;
-    Recommendation rec[10];
-    Food egg   = { "계란", { 2099, 12, 31 }, 6, FRIDGE };
-    Food onion = { "대파", { 2099, 12, 31 }, 1, FRIDGE };
-    Recipe omelet = { "계란말이", { "계란", "대파" }, { 3, 1 }, 2, 0 };
-    int n;
+/* 레시피를 추가했으면 1. addedName에 추가한 요리 이름이 들어간다 (필요 없으면 NULL) */
+int recipeDialog(HWND owner, wchar_t *addedName, int nameLen);
 
-    initFridge(&f);
-    initRecipeBook(&rb);
-    addFood(&f, &egg);
-    addFood(&f, &onion);
-    CHECK(addRecipe(&rb, &omelet) == RC_OK);
-    CHECK(addRecipe(&rb, &omelet) == RC_INVALID);          /* 이름 중복 */
-
-    n = recommend(&f, &rb, rec, 10);
-    CHECK(n == 1);
-    CHECK(rec[0].canCook == 1);
-    CHECK(rec[0].score == 40);                             /* 2개 × 10 + 20, 임박 없음 */
-
-    CHECK(cookRecipe(&f, &omelet) == RC_OK);
-    CHECK(f.count == 1 && f.items[0].quantity == 3);       /* 계란 6 → 3, 대파는 0이라 삭제 */
-    CHECK(cookRecipe(&f, &omelet) == RC_NOT_ENOUGH);       /* 대파가 없다 */
-    CHECK(f.items[0].quantity == 3);                       /* 실패했으니 차감되지 않음 */
-
-    freeFridge(&f);
-    freeRecipeBook(&rb);
-}
+#endif
 ```
+
+| 입력칸 | 검사 |
+|---|---|
+| 요리 이름 | 비어 있으면 안 되고 공백 불가, 한글 14자 이내 |
+| 재료 (최대 `MAX_ING` = 10개) | 이름(공백 불가, 14자 이내)과 필요 수량(1~99)을 **짝으로** 입력. 안 쓰는 칸은 비워 둔다. 하나도 없으면 거절 |
+| 조리 순서 (선택) | 한 줄에 한 단계, 최대 20단계, 한 단계는 한글 127자 이내 |
+
+구현 요점
+- 입력값을 **모두 검사한 뒤에** `Recipe`를 채워서 `addRecipe`(**`isCustom = 1`**)를 호출합니다. 같은 이름이 이미 있으면 `RC_INVALID`이므로 "이미 있는 이름"이라고 안내합니다.
+- 조리 순서를 입력했으면 `addRecipe`가 성공한 뒤 `addRecipeSteps`(`guide.h`)로 저장합니다.
+- 대화상자 틀(`gui_dialog.h`)은 6.2장과 같은 방식으로 씁니다.
+
+##### dlg_recipe 완료 기준
+- 이름만 쓰고 재료를 하나도 안 넣으면 거절한다. 재료 이름만 쓰고 수량을 비우면(또는 반대) 그 칸으로 커서가 이동한다
+- 이미 있는 요리 이름을 넣으면 거절하고, 새 이름이면 추가된다
+- 추가한 레시피는 `isCustom == 1`이고, 프로그램을 껐다 켜도 남아 있다
+- 조리 순서를 입력한 레시피는 요리 추천 창에서 그 순서가 보인다
+
+#### 혼자 확인하기
+
+1. **recipe:** 재료를 등록하고 **요리 추천** 창을 열어, 재료가 충분한 요리는 "바로 가능", 절반 이상이면 "부족: ○○"으로 나오는지 확인한다
+2. **recipe:** "바로 가능"한 요리를 골라 **요리하기** → 재료 수량이 레시피대로 줄고, 0이 된 재료는 표에서 사라지는지 확인한다
+3. **recipe:** 같은 재료가 유통기한이 다른 두 줄이면 **유통기한이 빠른 줄부터** 줄어드는지 확인한다
+4. **recipe:** 재료가 부족한 요리는 요리하기 버튼이 눌리지 않고, 수량이 줄지 않는지 확인한다
+5. **dlg_recipe:** 위 "완료 기준"을 하나씩 확인한다. 같은 이름을 두 번 추가해 본다
+6. **recipes.txt:** 레시피가 20개 이상이고 재료 이름이 통일되어 있는지(`계란`/`달걀` 섞임 없음) 확인한다
 
 #### 개발 외 업무
 - 부팀장: 윤종하가 없을 때 PR 검토·병합 대행, 윤종하의 PR 검토
@@ -880,7 +818,7 @@ void testRecipe(void)
 
 ### 6.5 박지연 (food, stats)
 
-**담당:** `food.c/h`, `stats.c/h`, `test_food.c`, `test_stats.c`
+**담당:** `food.c/h`, `stats.c/h`
 **브랜치:** `feature/food`, `feature/stats`
 
 `food`를 먼저 만들고(11/25 먼저 올릴 함수, 11/29 전체), 그다음 `stats`를 만듭니다(12/03).
@@ -915,7 +853,7 @@ int        findFood(const Fridge *f, const char *name);           /* 이름으�
 | `useFood` | `idx` 범위 밖이면 `RC_NOT_FOUND`, `amount <= 0`이면 `RC_INVALID`, `amount`가 보유 수량보다 크면 `RC_NOT_ENOUGH`. 차감 후 수량이 0이면 `removeFood`로 삭제 |
 | `findFood` | `strcmp`로 이름이 같은 **첫 번째** 항목의 인덱스. 없으면 -1 |
 
-날짜가 올바른지(윤년, 월별 일수)는 `food`가 아니라 **입력 단계(`inputDate`)에서** 검사합니다. 그래서 `food.c`는 `expiry.h`를 부르지 않습니다.
+날짜가 올바른지(윤년, 월별 일수)는 `food`가 아니라 **입력 단계(`dlg_food`의 날짜 입력)에서** 검사합니다. 그래서 `food.c`는 `expiry.h`를 부르지 않습니다.
 
 구현 요점: 동적 배열 확장은 이렇게 합니다.
 
@@ -935,43 +873,6 @@ f->items[f->count++] = *item;
 - `addFood`를 20번 호출해도(capacity 4 → 8 → 16 → 32) 오류 없이 모두 저장된다
 - 같은 이름·같은 유통기한·같은 보관 방법의 재료를 두 번 등록하면 항목은 1개, 수량은 합쳐진다
 - 범위 밖 `idx`, 수량 초과 차감에 프로그램이 죽지 않고 지정된 `ResultCode`가 나온다
-
-##### 혼자 테스트하기 (`--test food`)
-
-```c
-/* test_food.c */
-#include "test.h"
-#include "food.h"
-
-void testFood(void)
-{
-    Fridge f;
-    Food egg = { "계란", { 2026, 11, 12 }, 6, FRIDGE };
-    int i;
-
-    initFridge(&f);
-    CHECK(addFood(&f, &egg) == RC_OK);
-    CHECK(f.count == 1);
-
-    CHECK(addFood(&f, &egg) == RC_OK);                 /* 같은 재료 → 수량 합치기 */
-    CHECK(f.count == 1 && f.items[0].quantity == 12);
-
-    CHECK(findFood(&f, "계란") == 0);
-    CHECK(findFood(&f, "우유") == -1);
-
-    CHECK(useFood(&f, 0, 100) == RC_NOT_ENOUGH);
-    CHECK(removeFood(&f, 5) == RC_NOT_FOUND);
-    CHECK(useFood(&f, 0, 12) == RC_OK && f.count == 0);   /* 0이 되면 자동 삭제 */
-
-    for (i = 0; i < 20; i++) {                         /* 동적 배열 확장 확인 */
-        Food x = { "재료", { 2026, 12, 1 }, 1, FRIDGE };
-        x.expire.day = 1 + i;                          /* 날짜를 달리해 합쳐지지 않게 */
-        CHECK(addFood(&f, &x) == RC_OK);
-    }
-    CHECK(f.count == 20);
-    freeFridge(&f);
-}
-```
 
 #### stats
 
@@ -1006,70 +907,56 @@ void       computeWasteStats(const WasteList *w, Date today, WasteStats *out);  
 - 폐기 기록이 0개일 때 `computeWasteStats`가 모두 0으로 채우고 죽지 않는다
 - 폐기 횟수가 같은 재료가 여럿이면 먼저 나온 재료가 `topName`이다
 
-##### 혼자 테스트하기 (`--test stats`)
+#### 혼자 확인하기
 
-```c
-/* test_stats.c */
-#include <string.h>
-#include "test.h"
-#include "stats.h"
-
-void testStats(void)
-{
-    WasteList w;
-    WasteStats s;
-    Date today = { 2026, 11, 9 };
-    Food milk = { "우유",     { 2026, 11, 5 }, 1, FRIDGE };
-    Food pork = { "돼지고기", { 2026, 11, 6 }, 2, FREEZER };
-
-    initWasteList(&w);
-    CHECK(addWaste(&w, &milk, today) == RC_OK);
-    CHECK(addWaste(&w, &milk, today) == RC_OK);
-    CHECK(addWaste(&w, &pork, today) == RC_OK);
-
-    computeWasteStats(&w, today, &s);
-    CHECK(s.totalRecords == 3);
-    CHECK(s.totalQuantity == 4);
-    CHECK(s.fridgeCount == 2 && s.freezerCount == 1);
-    CHECK(strcmp(s.topName, "우유") == 0 && s.topCount == 2);
-    CHECK(s.thisMonth == 3);
-
-    freeWasteList(&w);
-}
-```
+1. **food:** 재료를 등록·수정·삭제하고 수량을 바꾼다. 표와 상태줄의 개수가 맞는지 확인한다
+2. **food:** 같은 이름·같은 유통기한·같은 보관 방법의 재료를 두 번 등록하면 한 줄로 합쳐지고 수량이 더해지는지 확인한다. 유통기한이나 보관 방법이 다르면 따로 남는지 확인한다
+3. **food:** 재료를 20개 넘게 등록해도 오류 없이 모두 표시되는지 확인한다 (동적 배열 확장)
+4. **food:** 수량 변경에서 현재보다 줄이면 `useFood`, 늘리면 `updateFood`로 동작하는지 확인한다
+5. **stats:** 재료를 삭제하면서 "폐기로 기록"을 선택하고, **폐기 통계**의 횟수·수량이 늘어나는지 확인한다
+6. **stats:** 기한 지난 재료를 여러 개 만들고 **기한 지난 재료 폐기**를 누른다. 표에서 모두 사라지고 폐기 기록은 같은 개수만큼 늘어나는지 확인한다
+7. **stats:** 폐기 기록이 하나도 없을 때 통계 창이 "아직 폐기 기록이 없습니다"로 나오고 죽지 않는지 확인한다
 
 #### 개발 외 업무
-- 테스트 시나리오 작성: 정상 입력, 잘못된 날짜(2월 30일), 빈 목록, 수량 0, 파일 없음, 이름에 공백, 한글 14자 초과 등
+- 확인 시나리오 작성: 정상 입력, 잘못된 날짜(2월 30일), 빈 목록, 수량 0, 파일 없음, 이름에 공백, 한글 14자 초과 등
 - 통합 테스트(12/07~) 실행, 발견한 버그를 **GitHub Issues**에 등록 (제목: `[버그] 어떤 화면 - 증상`, 내용: 재현 순서)
 - 테스트 결과서 작성
 
 ---
 
-### 6.6 GUI 도전 (v1.0 이후)
+### 6.6 GUI 화면과 API 조리법 (윤종하)
 
-콘솔 버전이 완성되어 `v1.0` 태그가 붙은 뒤, 시간이 남으면 윤종하가 진행합니다. **로직 모듈은 고치지 않고** 그대로 호출합니다. 팀원이 맡을 일은 없으며, 화면 예시는 15.2장, 한글 변환은 13.3장입니다. **콘솔 버전은 항상 실행 가능한 상태**로 유지합니다.
+윤종하가 진행합니다. **로직 모듈은 고치지 않고** 그대로 호출합니다. 팀원이 맡을 일은 없으며, 화면 예시는 15.2장, 한글 변환은 13.3장입니다.
 
 ---
 
 ## 7. 프로젝트 목표
 
-### 필수 목표 (콘솔 버전)
-- F1~F6 기능을 콘솔 프로그램으로 모두 완성
-- 데이터 파일 저장·불러오기로 프로그램을 껐다 켜도 정보 유지
-- 로직 모듈과 화면 모듈을 분리한 구조로 구현
+### 필수 목표 (GUI 버전)
+F1~F6 기능을 Windows 창 화면(Win32 API)으로 모두 완성합니다. 로직 모듈은 화면과 분리되어 있어 **수정 없이** 그대로 사용합니다.
 
-### 도전 목표 (GUI 버전)
-콘솔 버전이 완성된 뒤 단계별로 진행합니다. 로직 모듈은 **수정 없이 그대로** 재사용합니다.
-
-| 단계 | 내용 | 난이도 |
+| 단계 | 내용 | 상태 |
 |:---:|---|:---:|
-| G1 | 프로그램 시작 시 유통기한 알림을 Windows 팝업 창(`MessageBoxW`)으로 표시 | 하 |
-| G2 | 메인 창에 식재료 목록 표(ListView)와 기능 버튼 배치, 임박순 정렬 표시 | 중 |
-| G3 | 식재료 등록·수정 입력 창, 삭제·수량 변경 버튼 | 중 |
-| G4 | 요리 추천 창(추천 목록 + "요리하기" 버튼으로 자동 차감), 레시피 추가 창 | 상 |
-| G5 | 폐기 통계 창, 임박 재료는 목록에서 빨간색·주황색으로 강조 | 상 |
+| G1 | 프로그램 시작 시 유통기한 알림을 Windows 팝업 창(`MessageBoxW`)으로 표시 | 완료 |
+| G2 | 메인 창에 식재료 목록 표(ListView)와 기능 버튼 배치, 임박순 정렬 표시 | 완료 |
+| G3 | 식재료 등록·수정 입력 창, 삭제·수량 변경 버튼. 같은 재료(이름·유통기한·보관 방법 동일)는 수량을 합쳐서 표시 | 완료 |
+| G4 | 요리 추천 창(추천 목록 + "요리하기" 버튼으로 자동 차감), 레시피 추가 창 | 완료 |
+| G5 | 폐기 통계 창, 기한 지난 재료는 빨간색, 임박 재료는 주황색으로 강조 | 완료 |
 
-> GUI는 G1부터 순서대로 진행하며, 일정이 부족하면 완성된 단계까지만 제출합니다. 콘솔 버전은 항상 실행 가능한 상태로 유지합니다.
+- 데이터 파일 저장·불러오기로 프로그램을 껐다 켜도 정보가 유지됩니다.
+
+### 도전 목표 (API로 조리 방법 자동 불러오기)
+식품안전나라 "조리식품의 레시피 DB"(COOKRCP01) OpenAPI에서 **요리의 조리 순서를 자동으로 가져옵니다.**
+
+| 단계 | 내용 | 담당 파일 |
+|:---:|---|---|
+| A1 | 인증키 설정: 환경변수 `FOODSAFETY_API_KEY` 또는 `data/api_key.txt`(첫 줄). 키는 코드에 쓰지 않고 `.gitignore`로 올라가지 않게 함 | `guide_api` |
+| A2 | 요리 이름으로 API를 호출해 조리 순서(MANUAL01~20)를 받아 옴. 응답이 UTF-8이든 ANSI든 처리 | `guide_api` |
+| A3 | 받은 조리 순서를 `data/steps.txt`에 저장해, 한 번 받은 요리는 인터넷 없이도 표시 | `guide` |
+| A4 | 요리 추천 창에서 요리를 고르면 **조리 순서가 없을 때 자동으로** 불러옴. 창이 멈추지 않도록 백그라운드 스레드에서 호출하고, 실패 사유를 화면에 안내. `[조리법 불러오기]` 버튼으로 다시 받거나 갱신 | `dlg_recommend` |
+| A5 | **요리 추천을 API로**: 내 재료 이름으로 식품안전나라 레시피를 찾아 추천. 재료의 **양·개수는 보지 않고 이름이 재료 정보에 나오는지만** 대조하며, 임박 재료는 가산점. 인증키가 없으면 저장된 레시피로 추천 | `apirec`, `guide_api`, `dlg_recommend` |
+
+> 인증키가 없으면 자동 불러오기는 동작하지 않고, 저장된 조리 순서만 표시합니다. 키 발급·설정 방법은 14장을 참고합니다.
 
 ---
 
@@ -1083,7 +970,8 @@ void testStats(void)
 | F4 | 시작 시 임박 알림 | 실행 직후 "유통기한 지난 재료 N개, 2일 이내 재료 M개" 경고 표시 | `expiry` | 필수 |
 | F5 | 식재료 수정·삭제·수량 관리 | 정보 수정, 삭제, 수량 변경 / 요리 선택 시 사용한 재료 자동 차감 | `food`, `recipe` | 필수 |
 | F6 | 폐기 기록 통계 | 폐기한 재료를 기록하고 총 폐기 수, 보관 방법별 비율, 가장 많이 버린 재료 출력 | `stats` | 필수 |
-| G1~G5 | GUI 버전 | 위 기능을 Windows 창 화면으로 제공 | `ui_gui` | 도전 |
+| G1~G5 | GUI 화면 | 위 기능을 Windows 창 화면으로 제공 | `ui_gui` | 필수 |
+| A1~A5 | API 조리법·요리 추천 | 요리를 고르면 조리 순서를 자동으로 가져와 저장하고, 내 재료 이름으로 인터넷 레시피를 추천 | `guide_api`, `guide`, `apirec`, `dlg_recommend` | 도전 |
 
 ### 기능 상세
 
@@ -1099,8 +987,7 @@ void testStats(void)
 - 점수 순으로 정렬하고, 필요 재료의 절반 이상을 가진 요리만 추천하며, 부족한 재료도 함께 보여 줍니다.
 
 **F4. 시작 알림**
-- 콘솔: 테두리 박스 형태의 경고 화면 → 아무 키나 누르면 메인 메뉴로 이동
-- GUI(G1): Windows 경고 팝업 창
+- 실행하면 메인 창이 뜨기 전에 Windows 경고 팝업 창(G1)으로 "지난 재료 N개, 2일 이내 재료 M개"와 해당 재료 이름·D-day를 보여 줍니다.
 
 **F5. 자동 차감**
 - 추천 목록에서 요리를 선택하면 확인을 받은 뒤 레시피에 적힌 수량만큼 재료를 차감합니다.
@@ -1114,22 +1001,22 @@ void testStats(void)
 
 ## 9. 설계 원칙: 로직과 화면 분리
 
-같은 기능을 콘솔과 GUI 두 화면에서 쓰기 위해, 프로그램을 **로직 계층**과 **화면 계층**으로 나눕니다.
+화면(GUI)이 바뀌어도 계산·저장 코드를 그대로 쓰고, 담당자끼리 서로 방해하지 않도록 프로그램을 **로직 계층**과 **화면 계층**으로 나눕니다.
 
 ```
-┌──────────────────────┐    ┌──────────────────────┐
-│  화면 계층 (콘솔)     │    │  화면 계층 (GUI)      │
-│  main.c              │    │  main_gui.c          │
-│  ui_console.c        │    │  ui_gui.c            │
-│  printf / scanf_s    │    │  Win32 API           │
-└──────────┬───────────┘    └──────────┬───────────┘
-           │      같은 함수를 호출       │
-           └──────────────┬─────────────┘
-                          ▼
 ┌──────────────────────────────────────────────────┐
-│  로직 계층 (공통)                                 │
+│  화면 계층 (GUI)                                  │
+│  main_gui.c  ui_gui.c  gui_common.c  gui_dialog.c │
+│  dlg_simple.c  dlg_food.c  dlg_recipe.c           │
+│  dlg_recommend.c            (Win32 API)           │
+└────────────────────────┬─────────────────────────┘
+                         │  로직 함수만 호출
+                         ▼
+┌──────────────────────────────────────────────────┐
+│  로직 계층                                        │
 │  food.c  expiry.c  recipe.c  stats.c  fileio.c   │
-│  ※ printf / scanf / Win32 API 사용 금지           │
+│  guide.c  guide_api.c  apirec.c                  │
+│  ※ 창·대화상자·printf·scanf 사용 금지             │
 └──────────────────────────────────────────────────┘
 ```
 
@@ -1139,13 +1026,13 @@ void testStats(void)
 3. 화면 모듈은 로직 모듈의 함수만 호출하며, 구조체 내부를 직접 고치지 않습니다.
 
 ```c
-/* 잘못된 예: 화면과 로직이 섞여 있어 GUI에서 재사용 불가 */
+/* 잘못된 예: 화면과 로직이 섞여 있어 다른 사람이 따로 만들 수 없다 */
 void addFood(Fridge *f) {
     printf("이름: ");
     scanf("%s", ...);
 }
 
-/* 좋은 예: 로직만 담당하므로 콘솔과 GUI 모두에서 그대로 호출 */
+/* 좋은 예: 로직만 담당하므로 어떤 화면에서든 그대로 호출 */
 ResultCode addFood(Fridge *f, const Food *item);
 ```
 
@@ -1153,46 +1040,56 @@ ResultCode addFood(Fridge *f, const Food *item);
 
 ## 10. 모듈 구조
 
-하나의 솔루션 안에 **콘솔 프로젝트**와 **GUI 프로젝트** 두 개를 두고, 로직 모듈 소스 파일은 두 프로젝트가 함께 사용합니다.
+솔루션 안에 **GUI 프로젝트(`FridgeGUI`) 하나**를 두고, 로직 모듈과 화면 파일을 모두 이 프로젝트가 사용합니다.
 
 ```
 fridge-manager/
 ├── README.md
 ├── .gitignore
 ├── FridgeManager.slnx         # 솔루션 파일 (이 파일을 열어서 작업)
-├── FridgeConsole/
-│   └── FridgeConsole.vcxproj # 콘솔 프로젝트 (필수)
 ├── FridgeGUI/
-│   └── FridgeGUI.vcxproj     # GUI 프로젝트 (도전)
-├── src/
-│   ├── common.h              # 공통 구조체, 열거형, 상수, ResultCode
-│   │
-│   │   ── 로직 계층 (두 프로젝트 공통) ──
-│   ├── food.h / food.c            # F1 등록, F5 수정·삭제·수량 변경·검색
-│   ├── expiry.h / expiry.c        # F2 날짜 계산·D-day·정렬, F4 임박 개수 계산
-│   ├── recipe.h / recipe.c        # F3 추천 점수 계산·레시피 추가, F5 자동 차감
-│   ├── stats.h / stats.c          # F6 폐기 기록 추가·일괄 폐기·통계 계산
-│   ├── fileio.h / fileio.c        # 모든 데이터 파일 저장·불러오기
-│   │
-│   │   ── 화면 계층 (콘솔 프로젝트, 필수) ──
-│   ├── main.c                     # 콘솔 진입점: 데이터 불러오기 → 알림 → 메뉴 → 저장
-│   ├── ui_console.h / ui_console.c  # 메뉴·목록·입력 화면 출력
-│   ├── util.h / util.c            # 안전한 콘솔 입력, 입력 버퍼 정리
-│   ├── test.h / test_*.c          # 모듈 단독 테스트 (--test 옵션, 6.0장)
-│   │
-│   │   ── 화면 계층 (GUI 프로젝트, 도전) ──
-│   ├── main_gui.c                 # GUI 진입점 (wWinMain)
-│   └── ui_gui.h / ui_gui.c        # 창, 버튼, ListView, 입력 대화상자
+│   └── FridgeGUI.vcxproj     # GUI 프로젝트 (필수)
+├── include/                  # 헤더 파일(.h)만 모아 둔 폴더
+│   ├── common.h                   # 공통 구조체, 열거형, 상수, ResultCode
+│   │   ── 로직 계층 ──
+│   ├── food.h  expiry.h  recipe.h  stats.h  fileio.h
+│   ├── guide.h  guide_api.h  apirec.h
+│   │   ── 화면 계층 (GUI) ──
+│   ├── ui_gui.h  gui_common.h  gui_dialog.h
+│   └── dlg_food.h  dlg_simple.h  dlg_recipe.h  dlg_recommend.h
+├── src/                      # 소스 파일(.c)만 모아 둔 폴더
+│   │   ── 로직 계층 (화면과 무관) ──
+│   ├── food.c                     # F1 등록, F5 수정·삭제·수량 변경·검색
+│   ├── expiry.c                   # F2 날짜 계산·D-day·정렬, F4 임박 개수 계산
+│   ├── recipe.c                   # F3 추천 점수 계산·레시피 추가, F5 자동 차감
+│   ├── stats.c                    # F6 폐기 기록 추가·일괄 폐기·통계 계산
+│   ├── fileio.c                   # 모든 데이터 파일 저장·불러오기
+│   ├── guide.c                    # 요리별 조리 순서 조회·저장 (data/steps.txt)
+│   ├── guide_api.c                # 도전: 식품안전나라 API로 조리 순서·요리 가져오기
+│   ├── apirec.c                   # 도전: 재료 이름으로 API 요리 추천 (양은 비교하지 않음)
+│   │   ── 화면 계층 (GUI) ──
+│   ├── main_gui.c                 # GUI 진입점 (wWinMain): 데이터 불러오기 → 알림 → 창 → 저장
+│   ├── ui_gui.c                   # 메인 창(식재료 표·기능 버튼), 시작 알림 (G1, G2)
+│   ├── gui_common.c               # 공통 도우미: 문자 변환, 메시지 창, 컨트롤·표 도우미, 목록 갱신
+│   ├── gui_dialog.c               # 모달 대화상자 틀 (DlgBase, runDialog)
+│   ├── dlg_food.c                 # 식재료 등록·수정 창 (G3)
+│   ├── dlg_simple.c               # 숫자 입력(수량 변경) 창, 글 보기(폐기 통계) 창 (G3, G5)
+│   ├── dlg_recipe.c               # 레시피 추가 창 (G4)
+│   └── dlg_recommend.c            # 요리 추천 창 + 조리법 자동 불러오기 (G4, A4)
 └── data/
     ├── fridge.txt            # 식재료 목록
     ├── recipes.txt           # 레시피 목록 (기본 + 사용자 추가)
-    └── waste.txt             # 폐기 기록
+    ├── steps.txt             # 요리별 조리 순서 (API로 받은 것 포함)
+    ├── waste.txt             # 폐기 기록
+    └── api_key.txt           # API 인증키 (직접 만듦, .gitignore로 제외됨)
 ```
 
 | 프로젝트 | 포함하는 파일 |
 |---|---|
-| `FridgeConsole` | `main.c`, `ui_console.c`, `util.c`, `test_*.c` + 로직 모듈 5개 |
-| `FridgeGUI` | `main_gui.c`, `ui_gui.c` + 로직 모듈 5개 |
+| `FridgeGUI` | 화면: `main_gui.c`, `ui_gui.c`, `gui_common.c`, `gui_dialog.c`, `dlg_*.c` (각각 `.h`와 쌍) + 로직 모듈(`food`, `expiry`, `recipe`, `stats`, `fileio`, `guide`, `guide_api`, `apirec`) |
+
+> 콘솔 버전(`main.c`, `ui_console`, `util`, `test_*.c`)은 제거했습니다. 로직 모듈은 화면과 분리되어 있어 수정 없이 GUI에서 그대로 쓰입니다.
+> 헤더는 `include/`, 소스는 `src/`에 나뉘어 있고, `FridgeGUI.vcxproj`의 "추가 포함 디렉터리"(`$(ProjectDir)..\include`)로 헤더를 찾습니다. 새 파일을 추가할 때도 `.h`는 `include/`, `.c`는 `src/`에 둡니다.
 
 ### 모듈별 주요 함수 (요약)
 
@@ -1227,17 +1124,15 @@ fridge-manager/
 
 | 모듈 | 함수 | 역할 |
 |---|---|---|
-| `ui_console` | `void showStartupAlert(const Fridge *f)` | 콘솔 경고 박스 출력 |
-| | `void runMainMenu(AppData *app)` | 메인 메뉴 반복 |
-| | `void screenAddFood / screenFoodList / screenEditFood ...` | 각 기능 화면 |
-| `util` | `int inputInt(const char *msg, int min, int max)` | 범위 검사가 있는 정수 입력 |
-| | `int inputDate(const char *msg, Date *d)` | `YYYY-MM-DD` 형식 검사 후 입력 |
-| | `void clearInputBuffer(void)` | 입력 버퍼 비우기 |
-| `ui_gui` | `void guiShowStartupAlert(const Fridge *f)` | G1: 경고 팝업 |
-| | `LRESULT CALLBACK MainWndProc(...)` | G2: 메인 창 메시지 처리 |
-| | `void guiRefreshList(HWND list, const Fridge *f)` | G2: ListView 갱신 |
-| | `INT_PTR CALLBACK FoodDlgProc(...)` | G3: 등록·수정 대화상자 |
-| | `void guiShowRecommend / guiShowStats ...` | G4·G5: 추천·통계 창 |
+| `ui_gui` | `void guiShowStartupAlert(const Fridge *f)` | G1: 시작 경고 팝업 |
+| | `int guiRun(HINSTANCE hInst, AppData *app, int nShow)` | G2: 메인 창 생성과 메시지 루프 |
+| `gui_common` | `void refreshMain(void)` | 임박순 정렬 후 표·상태줄 갱신 |
+| | `ansiToWide / wideToAnsi / mk / msg / ask / bad ...` | 문자 변환, 컨트롤 만들기, 메시지 창 |
+| `gui_dialog` | `void runDialog(HWND owner, const wchar_t *title, int cw, int ch, DlgBase *b)` | 모든 대화상자의 공통 틀 |
+| `dlg_simple` | `int promptNumber(...)` / `void textDialog(...)` | 수량 입력 창 / 글 보기(폐기 통계) 창 |
+| `dlg_food` | `int foodDialog(HWND owner, Food *food, int isEdit)` | G3: 식재료 등록·수정 창 |
+| `dlg_recipe` | `int recipeDialog(HWND owner, wchar_t *addedName, int nameLen)` | G4: 레시피 추가 창 |
+| `dlg_recommend` | `void recommendDialog(HWND owner)` | G4·A4: 요리 추천 창, 조리법 자동 불러오기 |
 
 > 주의: `common.h`와 로직 모듈의 함수 선언(`.h`)은 구현을 시작하기 전에 팀 전체가 확정합니다. 확정 후 변경할 때는 반드시 팀원에게 공유합니다.
 
@@ -1398,28 +1293,18 @@ typedef struct {              /* 화면 모듈이 들고 다니는 전체 데이
 
 ### 13.2 솔루션과 프로젝트 만들기 (팀장이 1회 진행 후 GitHub에 올림)
 
-> **현재 상태:** `FridgeManager.slnx`, `FridgeConsole` 프로젝트, `src/`의 빈 파일 16개는 이미 올라와 있습니다. 팀장에게 남은 일은 아래 "두 프로젝트 공통 설정"(`_CRT_SECURE_NO_WARNINGS`, 작업 디렉터리)과 6.1장의 `test_*.c` 추가, `data/` 폴더 생성입니다. GUI 프로젝트는 v1.0 이후에 추가합니다. 팀원은 이 절을 따라 할 필요가 없습니다.
+> **현재 상태:** `FridgeManager.slnx`와 `FridgeGUI` 프로젝트(`include/`, `src/`의 파일 포함)는 이미 만들어져 있습니다. 팀원은 이 절을 따라 할 필요가 없습니다. 새 파일은 팀장에게 요청합니다.
 
-**콘솔 프로젝트 (FridgeConsole)**
-1. 새 프로젝트 → **빈 프로젝트** → 이름 `FridgeConsole`, 솔루션 이름 `FridgeManager`
-2. 솔루션 탐색기 → "소스 파일" 우클릭 → 추가 → 기존 항목 → `src/`의 콘솔용 파일과 로직 모듈 `.c` 파일 추가
-3. "헤더 파일"에 `src/`의 `.h` 파일 추가
-4. 파일 확장자는 반드시 **`.c`**로 합니다. (`.cpp`이면 C++로 컴파일됩니다.)
-
-**GUI 프로젝트 (FridgeGUI, 도전 단계에서 추가)**
+**GUI 프로젝트 (FridgeGUI)**
 1. 솔루션 우클릭 → 추가 → 새 프로젝트 → **빈 프로젝트** → 이름 `FridgeGUI`
-2. `main_gui.c`, `ui_gui.c`와 로직 모듈 `.c` 파일을 기존 항목으로 추가
-   (로직 파일은 복사하지 않고 `src/`의 같은 파일을 두 프로젝트가 함께 참조합니다.)
-3. 프로젝트 속성 → 링커 → 시스템 → **하위 시스템: Windows (/SUBSYSTEM:WINDOWS)**
-4. 프로젝트 속성 → 고급 → **문자 집합: 유니코드 문자 집합 사용**
-5. 공용 컨트롤(ListView) 라이브러리는 `ui_gui.c` 상단에서 연결합니다.
-   ```c
-   #include <windows.h>
-   #include <commctrl.h>
-   #pragma comment(lib, "comctl32.lib")
-   ```
+2. `src/`의 `.c` 파일(`main_gui.c`, `ui_gui.c`, `gui_*.c`, `dlg_*.c`, 로직 모듈)과 `include/`의 `.h` 파일을 기존 항목으로 추가
+3. 프로젝트 속성 → C/C++ → 일반 → **추가 포함 디렉터리**에 `$(ProjectDir)..\include` 추가
+4. 프로젝트 속성 → 링커 → 시스템 → **하위 시스템: Windows (/SUBSYSTEM:WINDOWS)**
+5. 프로젝트 속성 → 고급 → **문자 집합: 유니코드 문자 집합 사용**
+6. 공용 컨트롤(ListView)과 인터넷(WinHTTP) 라이브러리는 소스 상단의 `#pragma comment(lib, ...)`로 연결합니다. (`gui_common.c`, `guide_api.c`)
+7. 파일 확장자는 반드시 **`.c`**로 합니다. (`.cpp`이면 C++로 컴파일됩니다.)
 
-**두 프로젝트 공통 설정** (구성: **모든 구성**, 플랫폼: **모든 플랫폼**으로 선택 후 설정)
+**공통 설정** (구성: **모든 구성**, 플랫폼: **모든 플랫폼**으로 선택 후 설정)
 - C/C++ → 전처리기 → 전처리기 정의에 `_CRT_SECURE_NO_WARNINGS` 추가
   (`scanf`, `fopen` 사용 시 나오는 보안 경고 C4996 해제)
 - 디버깅 → 작업 디렉터리를 **`$(SolutionDir)`**로 변경
@@ -1427,26 +1312,26 @@ typedef struct {              /* 화면 모듈이 들고 다니는 전체 데이
 
 ### 13.3 한글 처리
 
-한국어 Windows의 콘솔은 기본적으로 **코드 페이지 949(EUC-KR)**를 사용합니다. 아래처럼 맞추면 별도 설정 없이 콘솔에서 한글 입력과 출력이 정상 동작합니다.
+한국어 Windows의 기본 문자 코드는 **코드 페이지 949(EUC-KR)**입니다. 데이터 파일은 이 코드(ANSI)로 저장하고, 화면(Win32)은 유니코드를 쓰므로 표시·입력할 때 변환합니다.
 
 | 파일 종류 | 저장 인코딩 | 이유 |
 |---|---|---|
 | 소스 파일 (`.c`, `.h`) | **유니코드(서명 있는 UTF-8)** | GitHub에서도 한글 주석이 깨지지 않음. Visual Studio가 문자열을 실행 시 949로 자동 변환 |
-| 데이터 파일 (`.txt`) | **ANSI (EUC-KR)** | 콘솔 입력과 같은 인코딩이라 `strcmp` 비교가 정확함 |
+| 데이터 파일 (`.txt`) | **ANSI (EUC-KR)** | 로직의 문자열이 949라서 `strcmp` 비교가 정확함. 화면에 보일 때만 유니코드로 변환 |
 | `README.md` | UTF-8 | GitHub 표시용 |
 
 - 소스 파일 인코딩 변경: 파일 → 다른 이름으로 저장 → 저장 버튼 옆 화살표 → **인코딩하여 저장** → "유니코드(서명 있음)(UTF-8) - 코드 페이지 65001"
 - 데이터 파일 인코딩 변경: 메모장에서 열기 → 다른 이름으로 저장 → 인코딩 **ANSI**
-- 프로젝트 속성에 `/utf-8` 옵션은 **추가하지 않습니다.** (추가하면 콘솔 한글 출력이 깨집니다.)
+- 프로젝트 속성에 `/utf-8` 옵션은 **추가하지 않습니다.** (추가하면 소스의 한글 문자열이 깨질 수 있습니다.)
 
 **GUI에서의 한글**: Win32 API는 유니코드(`wchar_t`) 함수(`...W`)를 사용합니다. 데이터 파일에서 읽은 문자열은 화면에 표시하기 전에 변환합니다.
 ```c
-/* ui_gui.c: ANSI(949) → 유니코드 변환 (로직 데이터를 화면에 표시할 때) */
+/* gui_common.c: ANSI(949) → 유니코드 변환 (로직 데이터를 화면에 표시할 때) */
 void ansiToWide(const char *src, wchar_t *dst, int dstLen) {
     MultiByteToWideChar(CP_ACP, 0, src, -1, dst, dstLen);
 }
 
-/* ui_gui.c: 유니코드 → ANSI(949) 변환 (입력창 값을 로직에 넘길 때) */
+/* gui_common.c: 유니코드 → ANSI(949) 변환 (입력창 값을 로직에 넘길 때) */
 void wideToAnsi(const wchar_t *src, char *dst, int dstLen) {
     WideCharToMultiByte(CP_ACP, 0, src, -1, dst, dstLen, NULL, NULL);
 }
@@ -1474,18 +1359,25 @@ Release/
 ## 14. 빌드 및 실행 방법
 
 1. GitHub 저장소를 클론한 뒤 `FridgeManager.slnx`를 Visual Studio로 엽니다.
-2. 솔루션 탐색기에서 실행할 프로젝트를 우클릭 → **시작 프로젝트로 설정**
-   - 콘솔 버전: `FridgeConsole`
-   - GUI 버전: `FridgeGUI`
-3. `Ctrl + F5` (디버깅하지 않고 시작) 또는 `F5` (디버깅 시작)
+2. 솔루션 탐색기에서 `FridgeGUI`를 우클릭 → **시작 프로젝트로 설정**
+3. 구성을 **Debug / x64**로 두고 `Ctrl + F5` (디버깅하지 않고 시작) 또는 `F5` (디버깅 시작)
 
-> 실행 시 솔루션 폴더 안에 `data/` 폴더가 있어야 합니다. 작업 디렉터리 설정(13.2)을 확인하세요.
+> 실행 시 솔루션 폴더 안에 `data/` 폴더가 있어야 합니다. `.exe`를 직접 실행해도 위쪽 폴더에서 `data/`를 찾아 이동합니다.
+
+### 14.1 조리법 자동 불러오기 설정 (API 인증키)
+
+1. 식품안전나라(foodsafetykorea.go.kr) 오픈API에서 **조리식품의 레시피 DB(COOKRCP01)** 이용 신청 후 인증키를 발급받습니다.
+2. `data/api_key.example.txt`를 복사해 `data/api_key.txt`를 만들고, 인증키를 **첫 줄에 영문·숫자만** 적습니다. (또는 환경변수 `FOODSAFETY_API_KEY`) 파일에는 키 한 줄만 넣고, 설명 줄이나 따옴표, 공백은 넣지 마세요.
+3. 프로그램을 실행해 **요리 추천** 창을 열면 **인터넷 추천**으로 열립니다. 내 재료 이름으로 식품안전나라 레시피를 찾아 보여 주고(양은 비교하지 않음), 저장된 레시피 추천에서 조리 순서가 없는 요리를 고르면 잠시 뒤 자동으로 불러와 `data/steps.txt`에 저장합니다.
+4. `조리법 불러오기` 버튼으로 다시 받거나 이미 저장된 조리 순서를 인터넷 것으로 바꿀 수 있습니다.
+
+> `data/api_key.txt`는 `.gitignore`에 들어 있어 GitHub에 올라가지 않습니다. **인증키를 코드나 README에 적지 마세요.**
 
 ---
 
 ## 15. 실행 화면 예시
 
-### 15.1 콘솔 버전 (필수)
+### 15.1 콘솔 버전 (제거됨, 설계 당시 참고용)
 
 **프로그램 시작 시 알림**
 ```
@@ -1553,7 +1445,7 @@ Release/
 [팁] 냉장 재료 폐기가 많아요. 장보기 양을 조금 줄여 보세요!
 ```
 
-### 15.2 GUI 버전 (도전)
+### 15.2 GUI 버전
 
 **G1. 시작 알림 팝업**
 ```
@@ -1627,7 +1519,7 @@ void guiShowStartupAlert(const Fridge *f) {
 
 | 증상 | 원인 | 해결 |
 |---|---|---|
-| `v145 플랫폼 도구 집합을 찾을 수 없습니다` | 팀장의 Visual Studio가 더 최신 버전 | 팀장에게 알리기. 급하면 프로젝트 속성 → 일반 → 플랫폼 도구 집합을 설치된 것(`v143` 등)으로 바꿔 실행하되, **커밋 전에 `git restore FridgeConsole/FridgeConsole.vcxproj`로 되돌리기** |
+| `v145 플랫폼 도구 집합을 찾을 수 없습니다` | 팀장의 Visual Studio가 더 최신 버전 | 팀장에게 알리기. 급하면 프로젝트 속성 → 일반 → 플랫폼 도구 집합을 설치된 것(`v143` 등)으로 바꿔 실행하되, **커밋 전에 `git restore FridgeGUI/FridgeGUI.vcxproj`로 되돌리기** |
 | 한글이 `?`나 깨진 글자로 나옴 | 소스 인코딩 문제 | 소스는 UTF-8(서명 있음), 데이터는 ANSI. `/utf-8` 옵션은 추가하지 않기 (4.6, 13.3) |
 | `error C4996: 'scanf': This function may be unsafe` | 보안 경고가 오류로 처리됨 | 프로젝트 속성 → C/C++ → 전처리기에 `_CRT_SECURE_NO_WARNINGS` (팀장이 설정. 안 되어 있으면 알리기) |
 | 프로그램이 `data/fridge.txt`를 못 찾음 | 작업 디렉터리가 다름 | 속성 → 디버깅 → 작업 디렉터리 `$(SolutionDir)`. `.exe`를 직접 더블클릭하면 안 됨 |
@@ -1635,7 +1527,7 @@ void guiShowStartupAlert(const Fridge *f) {
 | `LNK2005: 이미 정의되었습니다` | 헤더에 함수 본문을 넣음 | 본문은 `.c`에, `.h`에는 선언만 |
 | 새 파일이 C++로 컴파일됨 (`error C2440` 등) | 확장자가 `.cpp` | `.c`로 만들기 |
 | 실행하자마자 창이 닫힘 | `F5`로 실행 | `Ctrl + F5` 사용 |
-| 입력 후 다음 입력이 건너뛰어짐 / 무한 반복 | `scanf` 뒤 입력 버퍼에 개행이 남음 | `fgets` + `sscanf` 사용 (`util.c`의 입력 함수만 쓰기) |
+| `fatal error C1083: 포함 파일을 열 수 없습니다 (…h)` | 헤더를 `include/`가 아닌 곳에 만들었거나 포함 경로가 빠짐 | `.h`는 `include/`에 두고, 프로젝트 속성의 추가 포함 디렉터리에 `$(ProjectDir)..\include`가 있는지 확인 |
 | 실행 중 갑자기 종료 (`Access violation`) | `NULL` 포인터, 배열 범위 밖 접근 | 인자 `NULL` 검사, `idx < count` 검사. 디버거(`F5`)로 멈춘 줄 확인 |
 | 재료를 많이 넣으면 죽음 | `realloc` 결과를 잘못 처리 | 임시 변수에 받고 `NULL` 검사 후 대입 (4.5) |
 | 이름 검색이 안 됨 | 이름 끝에 개행(`\n`)이 붙어 있음 | `fgets`로 받은 문자열의 `\n` 제거 |
@@ -1647,22 +1539,21 @@ void guiShowStartupAlert(const Fridge *f) {
 
 ## 17. 완료 체크리스트
 
-### 기능 (콘솔 v1.0)
-- [ ] F1 식재료 등록, 같은 재료 수량 합치기 (박지연)
-- [ ] F2 D-day 계산과 임박순 정렬 (김기범)
-- [ ] F3 요리 추천과 레시피 추가, 기본 레시피 20개 이상 (최민솔)
-- [ ] F4 시작 시 임박 알림 (김기범 함수, 윤종하 화면)
-- [ ] F5 수정·삭제·수량 변경, 요리 시 자동 차감 (박지연, 최민솔)
-- [ ] F6 폐기 기록, 일괄 폐기, 통계 (박지연)
-- [ ] 파일 저장·불러오기, 껐다 켜도 데이터 유지 (윤종하)
-- [ ] 안전한 입력 함수 (장태현)
-- [ ] 메인 메뉴와 전체 연결 (윤종하)
+### 기능 (GUI v1.0)
+- [ ] F1 식재료 등록, 같은 재료 수량 합치기 (박지연 `food`, 김기범 `dlg_food`)
+- [ ] F2 D-day 계산과 임박순 정렬 (김기범 `expiry`)
+- [ ] F3 요리 추천과 레시피 추가, 기본 레시피 20개 이상 (최민솔 `recipe`, `dlg_recipe`)
+- [ ] F4 시작 시 임박 알림 (김기범 `expiry`, 윤종하 `ui_gui`)
+- [ ] F5 수정·삭제·수량 변경, 요리 시 자동 차감 (박지연 `food`, 최민솔 `recipe`, 장태현 `dlg_simple`)
+- [ ] F6 폐기 기록, 일괄 폐기, 통계 (박지연 `stats`, 장태현 `dlg_simple`)
+- [ ] 파일 저장·불러오기, 껐다 켜도 데이터 유지 (윤종하 `fileio`)
+- [ ] 메인 창과 전체 연결 (윤종하 `ui_gui`, `main_gui`)
 
 ### 코드 규칙
-- [ ] 로직 모듈 5개에 `printf`, `scanf`, Win32 API가 없다
+- [ ] 로직 모듈(`food`, `expiry`, `recipe`, `stats`, `fileio`, `guide`)에 창·대화상자·`printf`·`scanf`가 없다
 - [ ] `malloc`/`realloc` 뒤 `NULL` 검사를 했고 종료 전 `free` 한다
 - [ ] 모든 함수에 한글 설명 주석, 파일 맨 위에 담당자 표시가 있다
-- [ ] `--test` 테스트가 모두 `[PASS]`다
+- [ ] 각자 6장의 "혼자 확인하기"를 실행해 보고 결과를 PR에 적었다
 - [ ] 소스는 UTF-8(서명 있음), 데이터는 ANSI다
 
 ### 협업 (모든 팀원)
@@ -1679,7 +1570,7 @@ void guiShowStartupAlert(const Fridge *f) {
 - [ ] 결과보고서 (윤종하가 취합, 각자 자기 모듈 설명 제출)
 - [ ] 발표 PPT (윤종하), 최종 발표·데모 시연 (장태현)
 - [ ] 12/13 `v1.0` 태그
-- [ ] (도전) `v2.0` 태그: GUI
+- [ ] (도전) API로 조리 방법 자동 불러오기 (인증키 설정 후 요리 추천 창에서 확인)
 
 ---
 
